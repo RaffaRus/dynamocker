@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
 ##
-## STEP 1 - BUILD
+## STEP 1 - BUILD the BE
 ##
 
 # specify the base image to  be used for the application, alpine or ubuntu
-FROM golang:1.17-alpine as BUILD
+FROM golang:1.17-alpine as BUILD-BE
 
 # create a working directory inside the image
 WORKDIR /app
@@ -17,22 +17,23 @@ COPY go.mod ./
 RUN go mod download
 
 # copy directory files i.e all files ending with .go
-COPY *.go ./
+COPY ../be-app/* ./
 
 # compile application
-RUN go build -o /dynamocker
+RUN go build ./cmd/dynamocker-be/main.go -o /dynamocker
 
 ##
-## STEP 2 - DEPLOY
+## STEP 3 - DEPLOY
 ##
 FROM scratch
 
 WORKDIR /
 
-COPY --from=BUILD /dynamocker /dynamocker
+#  copy binary
+COPY --from=BUILD-BE /dynamocker /dynamocker
 
 # tells Docker that the container listens on specified network ports at runtime
-EXPOSE 8888
+EXPOSE 8150
 
 # command to be used to execute when the image is used to start a container
 CMD [ "/dynamocker" ]
