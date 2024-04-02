@@ -11,26 +11,28 @@ FROM golang:1.17-alpine as BUILD-BE
 WORKDIR /app
 
 # copy Go modules and dependencies to image
-COPY go.mod ./
+COPY be-app/go.mod ./
 
 # download Go modules and dependencies
 RUN go mod download
 
 # copy directory files i.e all files ending with .go
-COPY ../be-app/* ./
+COPY be-app/ ./
+
+RUN ls -ltu
 
 # compile application
-RUN go build ./cmd/dynamocker-be/main.go -o /dynamocker
+RUN go build -o dynamocker ./cmd/main.go 
 
 ##
-## STEP 3 - DEPLOY
+## STEP 2 - DEPLOY
 ##
 FROM scratch
 
 WORKDIR /
 
 #  copy binary
-COPY --from=BUILD-BE /dynamocker /dynamocker
+COPY --from=BUILD-BE /app/dynamocker /dynamocker
 
 # tells Docker that the container listens on specified network ports at runtime
 EXPOSE 8150

@@ -1,3 +1,7 @@
+# be
+be-app/dynamocker
+
+#fe
 fe-app/node_modules
 fe-app/.vscode
 fe-app/dist
