@@ -13,14 +13,16 @@ import (
 func main() {
 	fmt.Print("Hello there, this is DynaMocker")
 
+	closeCh := make(chan bool)
+
 	// capture panics
-	defer handlePanic()
+	defer handlePanic(closeCh)
 
 	// read the customized values of the configuration from the env variables
 	config.ReadVars()
 
 	// init the mocked api management
-	if err := mockapi.Init(); err != nil {
+	if err := mockapi.Init(closeCh); err != nil {
 		log.Errorf("error while reading the existing APIs: %s", err)
 	}
 
@@ -31,13 +33,15 @@ func main() {
 
 	// exit after success
 	log.Info("Dyanmocker successfully stopped.")
+	closeCh <- true
 	os.Exit(0)
 }
 
-func handlePanic() {
+func handlePanic(ch chan bool) {
 	if err := recover(); err != nil {
 		log.Fatalf("Recovered panic: %f", err)
 	}
 	log.Info("Dyanmocker stopped after panic.")
+	ch <- true
 	os.Exit(1)
 }
