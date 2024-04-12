@@ -16,6 +16,7 @@ func Start() error {
 	}
 
 	s := http.NewServeMux()
+
 	s.HandleFunc("/dynamocker/api", handleUiReq)
 	s.HandleFunc("/", handleMockReq)
 	return http.ListenAndServe(":"+webPort, s)

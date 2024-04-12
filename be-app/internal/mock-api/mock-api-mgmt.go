@@ -26,6 +26,7 @@ func Init(closeAll chan bool) error {
 	}
 
 	// periodically poll from the folder
+	// safe mechanism to recover from not-working observing goroutine
 	go func(closeAll chan bool) {
 		for {
 			select {
@@ -184,7 +185,7 @@ func addMockApi(pathToFile string) {
 	mockApi.name = fileName
 	mockApiList[fileName] = &mockApi
 
-	log.Infof("loaded ", fileName, " mock API")
+	log.Info("loaded ", fileName, " mock API")
 
 }
 
@@ -201,7 +202,7 @@ func removeMockApi(pathToFile string) {
 	}
 	_, ok = mockApiList[fileName]
 	if !ok {
-		log.Error("mock api named '", fileName, "' not found. Probably already removed it")
+		log.Info("mock api named '", fileName, "' not found. Probably already removed it")
 		return
 	}
 	delete(mockApiList, fileName)
