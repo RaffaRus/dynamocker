@@ -96,17 +96,26 @@ components:
         type: object
         properties:
           errorResponse:
-            required:
-            type: string
+            type: string    
+        required:
+        - errorResponse
     mockApi:
       type: object
       properties:
+        name:
+          type: string
         url:
           type: string
         filePath:
           type: string
         added:
-          schema:
-            $ref: "#/components/schemas/date" 
+          type: string
+        lastModified:
+          type: string
+      required:
+        - "name"
+        - "url"
+        - "filePath"
+    
 
 
