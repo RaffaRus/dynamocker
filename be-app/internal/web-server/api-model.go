@@ -8,6 +8,7 @@ type ApiInterface interface {
 type Api struct {
 	resource string
 	versions []uint16
+	handler map[uint16]func(http.ResponseWriter, *http.Request)
 }
 
 // api ctor

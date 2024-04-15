@@ -4,18 +4,27 @@ import (
 	"dynamocker/internal/config"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
 type WebServer struct {
 	router  *mux.Router
-	version ApiVersion
+	version uint16
 	webPort string
 	apiList []Api
 }
 
-func NewServer(apiVersion ApiVersion) (ws *WebServer, err error) {
+func NewServer() (ws *WebServer, err error) {
+
+	// set api version of the server
+	if version, err := config.GetApiVersion(); err != nil {
+		return nil, fmt.Errorf("error while setting webserver port: %s", err)
+	} else {
+		ws.version = version
+	}
 
 	// set port
 	if webPort, err := config.GetServerPort(); err != nil {
@@ -25,26 +34,31 @@ func NewServer(apiVersion ApiVersion) (ws *WebServer, err error) {
 	}
 
 	// define handlers
-	apiList := []Api{}
+	apiList := []Api{
+		{resource: "/mock-api", versions: []uint16{1, 2}},
+	}
 
 	ws.router = mux.NewRouter()
 
 	// register handlers
 	for _, api := range apiList {
-		err := ws.register(api)
-		if err != nil {
-			return nil, err
-		}
+		ws.register(api)
 	}
 
 	return ws, nil
 }
 
-func (s WebServer) Start(version ApiVersion) error {
+func (ws WebServer) Start() error {
 
-	var err error
+	srv := &http.Server{
+		Addr:         "127.0.0.1:" + ws.webPort,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  20 * time.Second,
+		Handler:      ws.router,
+	}
 
-	return http.ListenAndServe(":"+s.webPort, s)
+	return srv.ListenAndServe()
 }
 
 func handleMockReq(rw http.ResponseWriter, req *http.Request) {
@@ -56,6 +70,8 @@ func handleUiReq(rw http.ResponseWriter, req *http.Request) {
 }
 
 // register api for each of its versions
-func (s WebServer) register(api Api) error {
-
+func (ws WebServer) register(api Api) {
+	for _, ver := range api.versions {
+		ws.router.HandleFunc("/dynamocker/api/"+strconv.Itoa(int(ver))+api.resource, api.handler[ver])
+	}
 }

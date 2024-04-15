@@ -26,10 +26,16 @@ func main() {
 		log.Errorf("error while reading the existing APIs: %s", err)
 	}
 
-	// start server
-	if err := webserver.Start(); err != nil {
+	// init server
+	ws webserver.WebServer
+
+	if ws, err := webserver.NewServer(); err != nil {
 		log.Errorf("error while serving the web server: %s", err)
 	}
+
+	// if err := ws.S; err != nil {
+	// 	log.Errorf("error while serving the web server: %s", err)
+	// }
 
 	// exit after success
 	log.Info("Dyanmocker successfully stopped.")
