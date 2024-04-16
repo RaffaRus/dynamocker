@@ -1,23 +1,24 @@
 package webserver
 
+import "net/http"
+
+type Method string
+
+const (
+	GET    Method = http.MethodGet
+	POST   Method = http.MethodPost
+	PATCH  Method = http.MethodPatch
+	DELETE Method = http.MethodDelete
+)
+
 type ApiInterface interface {
 	checkVersion() error
 	perform()
 }
 
 type Api struct {
+	// url of the resource
 	resource string
-	versions []uint16
-	handler map[uint16]func(http.ResponseWriter, *http.Request)
-}
-
-// api ctor
-func NewApi(resource string, ver ApiVersion) (Api, error) {
-	if ver == null {
-		return (Api{
-			resource,
-			
-		}, null)
-
-	}
+	// map between methods and function handler
+	handler map[Method]func(http.ResponseWriter, *http.Request)
 }

@@ -4,27 +4,22 @@ import (
 	"dynamocker/internal/config"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 type WebServer struct {
 	router  *mux.Router
-	version uint16
 	webPort string
 	apiList []Api
 }
 
-func NewServer() (ws *WebServer, err error) {
+func NewServer() (*WebServer, error) {
 
-	// set api version of the server
-	if version, err := config.GetApiVersion(); err != nil {
-		return nil, fmt.Errorf("error while setting webserver port: %s", err)
-	} else {
-		ws.version = version
-	}
+	var ws = WebServer{}
+	var err error
 
 	// set port
 	if webPort, err := config.GetServerPort(); err != nil {
@@ -33,19 +28,20 @@ func NewServer() (ws *WebServer, err error) {
 		ws.webPort = webPort
 	}
 
-	// define handlers
-	apiList := []Api{
-		{resource: "/mock-api", versions: []uint16{1, 2}},
-	}
-
 	ws.router = mux.NewRouter()
 
+	// setup logger for the server
+	ws.router.Use(loggingMiddleware)
+
+	// load handlers
+	ws.apiList = getHandlers()
+
 	// register handlers
-	for _, api := range apiList {
-		ws.register(api)
+	if err = ws.registerApis(); err != nil {
+		return nil, fmt.Errorf("error while registering the APIs: %s", err)
 	}
 
-	return ws, nil
+	return &ws, nil
 }
 
 func (ws WebServer) Start() error {
@@ -61,17 +57,20 @@ func (ws WebServer) Start() error {
 	return srv.ListenAndServe()
 }
 
-func handleMockReq(rw http.ResponseWriter, req *http.Request) {
-	return
-}
-
-func handleUiReq(rw http.ResponseWriter, req *http.Request) {
-
-}
-
-// register api for each of its versions
-func (ws WebServer) register(api Api) {
-	for _, ver := range api.versions {
-		ws.router.HandleFunc("/dynamocker/api/"+strconv.Itoa(int(ver))+api.resource, api.handler[ver])
+// register apis
+func (ws WebServer) registerApis() error {
+	for _, api := range ws.apiList {
+		for method, handler := range api.handler {
+			ws.router.HandleFunc("/dynamocker/api/"+api.resource, handler).Methods(string(method))
+		}
 	}
+	return nil
+}
+
+// middleware used for logging the incoming requests
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.RequestURI)
+		next.ServeHTTP(w, r)
+	})
 }

@@ -78,8 +78,21 @@ func updateMockApis(apis []MockApi) (err error) {
 	return nil
 }
 
-func GetAPIs() map[string]*MockApi {
-	return mockApiList
+func GetAPIs() []*MockApi {
+	ret := make([]*MockApi, 0)
+	for _, mockApi := range mockApiList {
+		ret = append(ret, mockApi)
+	}
+	return ret
+}
+
+func GetAPI(key string) *MockApi {
+	mockApi, ok := mockApiList[key]
+	if !ok {
+		log.Errorf("requested mockApi %s, but it has not been found", key)
+		return nil
+	}
+	return mockApi
 }
 
 func ObserveFolder(closeAll chan bool) {
