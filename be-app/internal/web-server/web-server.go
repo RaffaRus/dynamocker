@@ -34,7 +34,7 @@ func NewServer() (*WebServer, error) {
 	ws.router.Use(loggingMiddleware)
 
 	// load handlers
-	ws.apiList = getHandlers()
+	ws.apiList = ws.getHandlers()
 
 	// register handlers
 	if err = ws.registerApis(); err != nil {

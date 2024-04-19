@@ -17,8 +17,14 @@ import (
 )
 
 var mockApiList map[string]*MockApi = nil
+var folderPath string = ""
 
 func Init(closeAll chan bool) error {
+
+	var err error
+	if folderPath, err = config.GetMockApiFolder(); err != nil {
+		return fmt.Errorf("error while getting mock api folder: %s", err)
+	}
 
 	// load the stored APIs for the first time
 	if err := loadStoredAPIs(); err != nil {
@@ -47,13 +53,12 @@ func Init(closeAll chan bool) error {
 
 func loadStoredAPIs() (err error) {
 
-	var folderPath string
 	var files []fs.DirEntry
 	mockApiList = nil
 
 	// get path from config package
-	if folderPath, err = config.GetMockApiFolder(); err != nil {
-		return fmt.Errorf("error while getting mock api folder: %s", err)
+	if folderPath == "" {
+		return fmt.Errorf("the mock API folder has not been set-up")
 	}
 
 	if files, err = os.ReadDir(folderPath); err != nil {
@@ -66,7 +71,7 @@ func loadStoredAPIs() (err error) {
 			continue
 		}
 
-		addMockApi(folderPath + "/" + file.Name())
+		newMockApiDetected(folderPath + "/" + file.Name())
 
 	}
 
@@ -86,23 +91,24 @@ func GetAPIs() []*MockApi {
 	return ret
 }
 
-func GetAPI(key string) *MockApi {
+func GetAPI(key string) (*MockApi, error) {
 	mockApi, ok := mockApiList[key]
 	if !ok {
-		log.Errorf("requested mockApi %s, but it has not been found", key)
-		return nil
+		err := fmt.Errorf("requested mockApi %s has not been found", key)
+		log.Error(err)
+		return nil, err
 	}
-	return mockApi
+	return mockApi, nil
 }
 
 func ObserveFolder(closeAll chan bool) {
 	watcher, err := fsnotify.NewWatcher()
-	if path, err := config.GetMockApiFolder(); err != nil {
-		log.Error("error getting the mock api folder: ", err, ". no folder watched")
+	if folderPath == "" {
+		log.Error("the mock API folder has not been set-up")
 		return
 	} else {
-		watcher.Add(path)
-		log.Info("started watching path ", path)
+		watcher.Add(folderPath)
+		log.Info("started watching path ", folderPath)
 	}
 	if err != nil {
 		log.Fatal("could not setup new watcher: ", err)
@@ -122,18 +128,18 @@ func ObserveFolder(closeAll chan bool) {
 			}
 			// new api
 			if event.Has(fsnotify.Create) {
-				log.Info("adding mock API ", fileName)
-				addMockApi(event.Name)
+				log.Info("new json detected in the folder: ", fileName)
+				newMockApiDetected(event.Name)
 			}
 			// modified api
 			if event.Has(fsnotify.Write) {
-				log.Info("editing mock API ", fileName)
-				editMockApi(event.Name)
+				log.Info("modified json detected in teh folder: ", fileName)
+				modifiedMockApiDetected(event.Name)
 			}
 			// removed api
 			if event.Has(fsnotify.Remove) {
-				log.Info("removing mock API ", fileName)
-				removeMockApi(event.Name)
+				log.Info("removed json detected in the folder: ", fileName)
+				removedMockApidetected(event.Name)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -160,7 +166,7 @@ func stopObserving(watcher *fsnotify.Watcher) {
 	}
 }
 
-func addMockApi(pathToFile string) {
+func newMockApiDetected(pathToFile string) {
 
 	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
 	if !ok {
@@ -171,7 +177,7 @@ func addMockApi(pathToFile string) {
 	if _, ok = mockApiList[fileName]; ok {
 		log.Info("mock api named '", fileName, "' already present. Replacing the old one with the new one")
 	}
-	removeMockApi(pathToFile)
+	removedMockApidetected(pathToFile)
 
 	jsonFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -202,12 +208,12 @@ func addMockApi(pathToFile string) {
 
 }
 
-func editMockApi(pathToFile string) {
-	removeMockApi(pathToFile)
-	addMockApi(pathToFile)
+func modifiedMockApiDetected(pathToFile string) {
+	removedMockApidetected(pathToFile)
+	newMockApiDetected(pathToFile)
 }
 
-func removeMockApi(pathToFile string) {
+func removedMockApidetected(pathToFile string) {
 	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
 	if !ok {
 		log.Error("suffix '.json' not found in the ", pathToFile, " file")
@@ -219,5 +225,9 @@ func removeMockApi(pathToFile string) {
 		return
 	}
 	delete(mockApiList, fileName)
-
+	if _, ok = mockApiList[fileName]; ok {
+		log.Errorf("mock api named %s was not removed", fileName)
+	} else {
+		log.Infof("mock api named %s was successfully removed", fileName)
+	}
 }
