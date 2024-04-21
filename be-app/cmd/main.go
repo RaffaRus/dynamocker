@@ -6,6 +6,8 @@ import (
 	webserver "dynamocker/internal/web-server"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -14,6 +16,8 @@ func main() {
 	fmt.Print("Hello there, this is DynaMocker")
 
 	closeCh := make(chan bool)
+
+	go captureSisCall(closeCh)
 
 	// capture panics
 	defer handlePanic(closeCh)
@@ -31,9 +35,7 @@ func main() {
 		log.Errorf("error while serving the web server: %s", err)
 	}
 
-	if err := ws.Start(); err != nil {
-		log.Errorf("error while serving the web server: %s", err)
-	}
+	ws.Start(closeCh)
 
 	// exit after success
 	log.Info("Dyanmocker successfully stopped.")
@@ -48,4 +50,18 @@ func handlePanic(ch chan bool) {
 	log.Info("Dyanmocker stopped after panic.")
 	ch <- true
 	os.Exit(1)
+}
+
+func captureSisCall(closeCh chan bool) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
+	select {
+	case signal := <-sigChan:
+		log.Infof("received signal from OS: %s. Shutting down.", signal)
+		closeCh <- true
+		return
+	case <-closeCh:
+		return
+	}
+
 }

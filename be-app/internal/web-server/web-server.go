@@ -44,7 +44,7 @@ func NewServer() (*WebServer, error) {
 	return &ws, nil
 }
 
-func (ws WebServer) Start() error {
+func (ws WebServer) Start(closeCh chan bool) {
 
 	srv := &http.Server{
 		Addr:         "127.0.0.1:" + ws.webPort,
@@ -54,7 +54,13 @@ func (ws WebServer) Start() error {
 		Handler:      ws.router,
 	}
 
-	return srv.ListenAndServe()
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Debugf("web server closed: %s", err)
+		}
+	}()
+
+	go monitorAndCloseWebServer(srv, closeCh)
 }
 
 // register apis
@@ -73,4 +79,13 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		log.Println(r.RequestURI)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func monitorAndCloseWebServer(ws *http.Server, closeCh chan bool) {
+	select {
+	case <-closeCh:
+		if err := ws.Close(); err != nil {
+			log.Fatalf("error while closing web server: %s", err)
+		}
+	}
 }

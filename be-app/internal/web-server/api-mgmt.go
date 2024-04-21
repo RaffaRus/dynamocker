@@ -3,9 +3,11 @@ package webserver
 import (
 	mockapi "dynamocker/internal/mock-api"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -70,12 +72,30 @@ func getMockApi(w http.ResponseWriter, r *http.Request) {
 
 func postMockApi(w http.ResponseWriter, r *http.Request) {
 	// TO-DO add control over the id
-	// TO-DO check how PathValue works oto retrieve the id
 	key := r.PathValue("id")
+	if key == "" {
+		err := fmt.Errorf("no key provided")
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	var mockApi mockapi.MockApi
+	err = json.Unmarshal(body, &mockApi)
+	if err != nil {
+		log.Errorf("error while unmarshaling body from post request: %s", err)
+	}
+
+	vtor := validator.New(validator.WithRequiredStructEnabled())
+	err = vtor.Struct(mockApi)
+	if err != nil {
+		log.Errorf("invalid mock api passed form post request: %s", err)
+	}
+
 	if err = mockapi.AddNewMockApiFile(key, body); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -88,9 +108,12 @@ func patchMockApi(http.ResponseWriter, *http.Request) {
 }
 
 func deleteMockApi(w http.ResponseWriter, r *http.Request) {
-	// TO-DO add control over the id
-	// TO-DO check how PathValue works oto retrieve the id
 	key := r.PathValue("id")
+	if key == "" {
+		err := fmt.Errorf("no key provided")
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 	if err := mockapi.RemoveMockApiFile(key); err == nil {
 		http.Error(w, "requested mockAPI %s not found", http.StatusNotFound)
 		return
