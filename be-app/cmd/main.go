@@ -12,6 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// TODO: complete Tests
+
 func main() {
 	fmt.Print("Hello there, this is DynaMocker")
 

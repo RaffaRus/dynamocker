@@ -6,8 +6,11 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
+
+var mu sync.Mutex
 
 type MockApi struct {
 	name         string
@@ -20,6 +23,9 @@ type MockApi struct {
 // it must act on the file. observer will do its job
 func AddNewMockApiFile(fileName string, fileContent []byte) error {
 
+	mu.Lock()
+	defer mu.Unlock()
+
 	filePath := folderPath + "/" + fileName + ".json"
 
 	if err := os.WriteFile(filePath, fileContent, fs.ModePerm); err != nil {
@@ -31,6 +37,9 @@ func AddNewMockApiFile(fileName string, fileContent []byte) error {
 
 // it must act on the file. observer will do its job
 func RemoveMockApiFile(fileName string) error {
+
+	mu.Lock()
+	defer mu.Unlock()
 
 	if folderPath == "" {
 		return fmt.Errorf("the mock API folder has not been set-up")
@@ -47,6 +56,9 @@ func RemoveMockApiFile(fileName string) error {
 
 // it must act on the file. observer will do its job
 func RemoveAllMockApisFiles() error {
+
+	mu.Lock()
+	defer mu.Unlock()
 
 	if folderPath == "" {
 		return fmt.Errorf("the mock API folder has not been set-up")
@@ -75,4 +87,18 @@ func RemoveAllMockApisFiles() error {
 
 	return nil
 
+}
+
+// it must act on the file. observer will do its job
+func ModifyMockApiFile(fileName string, newFile []byte) error {
+
+	if err := RemoveMockApiFile(fileName); err != nil {
+		return err
+	}
+
+	if err := AddNewMockApiFile(fileName, newFile); err != nil {
+		return err
+	}
+
+	return nil
 }

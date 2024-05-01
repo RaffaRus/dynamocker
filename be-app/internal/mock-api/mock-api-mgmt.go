@@ -78,11 +78,6 @@ func loadStoredAPIs() (err error) {
 	return nil
 }
 
-func updateMockApis(apis []MockApi) (err error) {
-	// TO-DO: compare and update mock apis
-	return nil
-}
-
 func GetAPIs() []*MockApi {
 	ret := make([]*MockApi, 0)
 	for _, mockApi := range mockApiList {

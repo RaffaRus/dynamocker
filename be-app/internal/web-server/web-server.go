@@ -82,10 +82,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 func monitorAndCloseWebServer(ws *http.Server, closeCh chan bool) {
-	select {
-	case <-closeCh:
-		if err := ws.Close(); err != nil {
-			log.Fatalf("error while closing web server: %s", err)
-		}
+	<-closeCh
+	if err := ws.Close(); err != nil {
+		log.Fatalf("error while closing web server: %s", err)
 	}
 }

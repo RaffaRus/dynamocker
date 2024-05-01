@@ -47,7 +47,25 @@ paths:
         description: Name used to identify the mock api.
         schema:
           type : string
-    put:
+    post:
+      summary: Add a specific mock-api.
+      description: Provide a new structure for the mock-api that you want to add
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/mockApi"
+      responses:
+        '204':
+          description: The mock api has been added
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+    patch:
       summary: Modify a specific mock-api.
       description: Provide a new structure for the mock-api that you want to modify
       requestBody:
