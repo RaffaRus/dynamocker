@@ -3,12 +3,9 @@ package webserver
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
-
-var mu sync.Mutex // single client (UI), multiple requests
 
 // return dynamocer apis
 func (ws WebServer) getHandlers() []Api {

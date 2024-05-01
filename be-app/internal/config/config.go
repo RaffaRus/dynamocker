@@ -13,7 +13,7 @@ var envVarList map[string]string = map[string]string{
 	"DYNA_MOCK_API_FOLDER": "/var/dynamocker/mocks/",
 }
 
-// read all the env variables. If found, replaces the default value with the one provided
+// read all the env variables
 func ReadVars() {
 
 	for env := range envVarList {
