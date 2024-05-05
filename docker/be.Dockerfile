@@ -22,7 +22,7 @@ COPY be-app/ ./
 RUN ls -ltu
 
 # compile application
-RUN go build -o dynamocker ./cmd/main.go 
+RUN make build && make test
 
 ##
 ## STEP 2 - DEPLOY

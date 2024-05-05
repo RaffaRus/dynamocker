@@ -1,24 +1,26 @@
 package webserver
 
+import "testing"
+
 // Test each API using w http.ResponseWriter and  r *http.Request
-func TestGetMockApis() {
+func TestGetMockApis(t *testing.T) {
 
 }
 
-func TestDeleteMockApis() {
+func TestDeleteMockApis(t *testing.T) {
 }
 
-func TestGetMockApi() {
-
-}
-
-func TestPostMockApi() {
+func TestGetMockApi(t *testing.T) {
 
 }
 
-func TestPatchMockApi() {
+func TestPostMockApi(t *testing.T) {
+
 }
 
-func TestDeleteMockApi() {
+func TestPatchMockApi(t *testing.T) {
+}
+
+func TestDeleteMockApi(t *testing.T) {
 
 }

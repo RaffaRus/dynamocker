@@ -1,8 +1,10 @@
 package webserver
 
-func TestGetWebHandlers() {
+import "testing"
+
+func TestGetWebHandlers(t *testing.T) {
 
 }
 
-func TestEncodeJson() {
+func TestEncodeJson(t *testing.T) {
 }

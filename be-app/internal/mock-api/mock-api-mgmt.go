@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var mockApiList map[string]*MockApi = nil
+var mockApiList map[string]*MockApi = make(map[string]*MockApi)
 var folderPath string = ""
 
 func Init(closeAll chan bool) error {
@@ -51,10 +51,12 @@ func Init(closeAll chan bool) error {
 	return nil
 }
 
+// loading the APIs from the mock api folder at startup
+// this function empties the mock api map and creates a new one
 func loadStoredAPIs() (err error) {
 
 	var files []fs.DirEntry
-	mockApiList = nil
+	mockApiList = make(map[string]*MockApi)
 
 	// get path from config package
 	if folderPath == "" {
@@ -71,7 +73,7 @@ func loadStoredAPIs() (err error) {
 			continue
 		}
 
-		newMockApiDetected(folderPath + "/" + file.Name())
+		detectedNewMockApi(folderPath + "/" + file.Name())
 
 	}
 
@@ -124,17 +126,17 @@ func ObserveFolder(closeAll chan bool) {
 			// new api
 			if event.Has(fsnotify.Create) {
 				log.Info("new json detected in the folder: ", fileName)
-				newMockApiDetected(event.Name)
+				detectedNewMockApi(event.Name)
 			}
 			// modified api
 			if event.Has(fsnotify.Write) {
-				log.Info("modified json detected in teh folder: ", fileName)
-				modifiedMockApiDetected(event.Name)
+				log.Info("modified json detected in the folder: ", fileName)
+				detectedNewMockApi(event.Name)
 			}
 			// removed api
 			if event.Has(fsnotify.Remove) {
 				log.Info("removed json detected in the folder: ", fileName)
-				removedMockApidetected(event.Name)
+				detectedRemovedMockApi(event.Name)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -161,7 +163,7 @@ func stopObserving(watcher *fsnotify.Watcher) {
 	}
 }
 
-func newMockApiDetected(pathToFile string) {
+func detectedNewMockApi(pathToFile string) {
 
 	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
 	if !ok {
@@ -171,29 +173,33 @@ func newMockApiDetected(pathToFile string) {
 
 	if _, ok = mockApiList[fileName]; ok {
 		log.Info("mock api named '", fileName, "' already present. Replacing the old one with the new one")
+		detectedRemovedMockApi(pathToFile)
 	}
-	removedMockApidetected(pathToFile)
 
 	jsonFile, err := os.Open(pathToFile)
 	if err != nil {
 		log.Errorf("error while opening the file %s: %s", pathToFile, err)
+		return
 	}
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		log.Errorf("error while reading the file %s: %s", pathToFile, err)
+		return
 	}
 
 	var mockApi MockApi
 	err = json.Unmarshal(byteValue, &mockApi)
 	if err != nil {
 		log.Errorf("error while unmarshaling the json file %s into the struct: %s", pathToFile, err)
+		return
 	}
 
 	vtor := validator.New(validator.WithRequiredStructEnabled())
 	err = vtor.Struct(mockApi)
 	if err != nil {
-		log.Errorf("invalid mock api saved in the  json file %s into the struct: %s", pathToFile, err)
+		log.Errorf("invalid mock api saved in the json file %s into the struct: %s", pathToFile, err)
+		return
 	}
 
 	mockApi.name = fileName
@@ -203,12 +209,8 @@ func newMockApiDetected(pathToFile string) {
 
 }
 
-func modifiedMockApiDetected(pathToFile string) {
-	removedMockApidetected(pathToFile)
-	newMockApiDetected(pathToFile)
-}
-
-func removedMockApidetected(pathToFile string) {
+// function called once a json mock api file has been removed from the folder
+func detectedRemovedMockApi(pathToFile string) {
 	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
 	if !ok {
 		log.Error("suffix '.json' not found in the ", pathToFile, " file")

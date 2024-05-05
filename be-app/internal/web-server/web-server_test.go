@@ -1,18 +1,20 @@
 package webserver
 
-func TestNewServer() {
+import "testing"
+
+func TestNewServer(t *testing.T) {
 }
 
-func TestWebStart() {
+func TestWebStart(t *testing.T) {
 }
 
-func TestRegisterApis() {
-
-}
-
-func TestLoggingMiddleware() {
+func TestRegisterApis(t *testing.T) {
 
 }
 
-func TestMonitorAndCloseWebServer() {
+func TestLoggingMiddleware(t *testing.T) {
+
+}
+
+func TestMonitorAndCloseWebServer(t *testing.T) {
 }

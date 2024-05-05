@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -17,7 +18,9 @@ var envVarList map[string]string = map[string]string{
 func ReadVars() {
 
 	for env := range envVarList {
+		fmt.Printf("looking for the key %s", env)
 		if val := os.Getenv(env); val != "" {
+			fmt.Printf("found the %s env variable:", fmt.Sprintf("[env]: %s", val))
 			envVarList[env] = val
 		}
 	}

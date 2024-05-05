@@ -1,17 +1,19 @@
 package mockapi
 
-func TestAddNewMockApiFile() {
+import "testing"
+
+func TestAddNewMockApiFile(t *testing.T) {
 
 }
 
-func TestRemoveMockApiFile() {
+func TestRemoveMockApiFile(t *testing.T) {
 
 }
 
-func TestRemoveAllMockApisFiles() {
+func TestRemoveAllMockApisFiles(t *testing.T) {
 
 }
 
-func TestModifyMockApiFile() {
+func TestModifyMockApiFile(t *testing.T) {
 
 }
