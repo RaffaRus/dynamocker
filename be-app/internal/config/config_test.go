@@ -19,21 +19,21 @@ func TestConfig(t *testing.T) {
 	getterTests := []getterConfTest{
 		{
 			GetLogLevel,
-			"INFO",
+			logEnvDefault,
 			"WARN",
-			"DYNA_LOG_LEVEL",
+			logEnv,
 		},
 		{
 			GetServerPort,
-			"8150",
+			portEnvDefault,
 			"9999",
-			"DYNA_SERVER_PORT",
+			portEnv,
 		},
 		{
 			GetMockApiFolder,
-			"/var/dynamocker/mocks/",
+			folderEnvDefault,
 			"test_folder",
-			"DYNA_MOCK_API_FOLDER",
+			folderEnv,
 		},
 	}
 	for _, test := range getterTests {
@@ -64,7 +64,7 @@ func TestReadVars(t *testing.T) {
 	fmt.Println("from test", envVarList)
 
 	// unset env variables if they exist already
-	for _, key := range []string{"DYNA_LOG_LEVEL", "DYNA_SERVER_PORT", "DYNA_MOCK_API_FOLDER"} {
+	for _, key := range []string{logEnv, portEnv, folderEnv, pollerIntervalEnv} {
 		if os.Getenv(key) != "" {
 			err := os.Unsetenv(key)
 			if err != nil {
@@ -75,19 +75,27 @@ func TestReadVars(t *testing.T) {
 
 	// if no matching env var has been set, let the default ones
 	ReadVars()
-	assert.Equal(t, "INFO", envVarList["DYNA_LOG_LEVEL"], "incorrect default env variable")
-	assert.Equal(t, "8150", envVarList["DYNA_SERVER_PORT"], "incorrect default env variable")
-	assert.Equal(t, "/var/dynamocker/mocks/", envVarList["DYNA_MOCK_API_FOLDER"], "incorrect default env variable")
+	assert.Equal(t, logEnvDefault, envVarList[logEnv], "incorrect default env variable")
+	assert.Equal(t, portEnvDefault, envVarList[portEnv], "incorrect default env variable")
+	assert.Equal(t, folderEnvDefault, envVarList[folderEnv], "incorrect default env variable")
 
 	// check the custom ones
-	if err := os.Setenv("DYNA_LOG_LEVEL", "DEBUG"); err != nil {
+	if err := os.Setenv(logEnv, "DEBUG"); err != nil {
 		t.Fatalf("cannot set env variable: %s", err)
 	}
-	if err := os.Setenv("DYNA_SERVER_PORT", "5555"); err != nil {
+	if err := os.Setenv(portEnv, "5555"); err != nil {
 		t.Fatalf("cannot set env variable: %s", err)
 	}
-	if err := os.Setenv("DYNA_MOCK_API_FOLDER", "mock_folder"); err != nil {
+	if err := os.Setenv(folderEnv, "mock_folder"); err != nil {
+		t.Fatalf("cannot set env variable: %s", err)
+	}
+	if err := os.Setenv(pollerIntervalEnv, "50"); err != nil {
 		t.Fatalf("cannot set env variable: %s", err)
 	}
 
+	ReadVars()
+	assert.Equal(t, "DEBUG", envVarList[logEnv], "incorrect default env variable")
+	assert.Equal(t, "5555", envVarList[portEnv], "incorrect default env variable")
+	assert.Equal(t, "mock_folder", envVarList[folderEnv], "incorrect default env variable")
+	assert.Equal(t, "50", envVarList[pollerIntervalEnv], "incorrect default env variable")
 }

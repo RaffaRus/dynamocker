@@ -8,18 +8,21 @@ import (
 // List of the environment variables to be checked. The corresponding
 // value is the default value
 const (
-	logEnv           = "DYNA_LOG_LEVEL"
-	portEnv          = "DYNA_SERVER_PORT"
-	folderEnv        = "DYNA_MOCK_API_FOLDER"
-	logEnvDefault    = "INFO"
-	portEnvDefault   = "8150"
-	folderEnvDefault = "/var/dynamocker/mocks/"
+	logEnv                = "DYNA_LOG_LEVEL"
+	logEnvDefault         = "INFO"
+	portEnv               = "DYNA_SERVER_PORT"
+	portEnvDefault        = "8150"
+	folderEnv             = "DYNA_MOCK_API_FOLDER"
+	folderEnvDefault      = "/var/dynamocker/mocks/"
+	pollerIntervalEnv     = "POLLER_INTERVAL"
+	pollerIntervalDefault = "60" // seconds
 )
 
 var envVarList map[string]string = map[string]string{
-	"DYNA_LOG_LEVEL":       "INFO",
-	"DYNA_SERVER_PORT":     "8150",
-	"DYNA_MOCK_API_FOLDER": "/var/dynamocker/mocks/",
+	logEnv:            logEnvDefault,
+	portEnv:           portEnvDefault,
+	folderEnv:         folderEnvDefault,
+	pollerIntervalEnv: pollerIntervalDefault,
 }
 
 // read all the env variables
@@ -57,5 +60,13 @@ func GetMockApiFolder() string {
 		return val
 	} else {
 		return folderEnvDefault
+	}
+}
+
+func GetPollingInterval() string {
+	if val := os.Getenv(pollerIntervalEnv); val != "" {
+		return val
+	} else {
+		return pollerIntervalDefault
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"dynamocker/internal/config"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -40,7 +41,7 @@ func NewServer() (*WebServer, error) {
 	return &ws, nil
 }
 
-func (ws WebServer) Start(closeCh chan bool) {
+func (ws WebServer) Start(closeCh chan bool, wg *sync.WaitGroup) {
 
 	srv := &http.Server{
 		Addr:         "127.0.0.1:" + ws.webPort,
@@ -50,13 +51,16 @@ func (ws WebServer) Start(closeCh chan bool) {
 		Handler:      ws.router,
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		if err := srv.ListenAndServe(); err != nil {
 			log.Debugf("web server closed: %s", err)
 		}
 	}()
 
-	go monitorAndCloseWebServer(srv, closeCh)
+	wg.Add(1)
+	go monitorAndCloseWebServer(srv, closeCh, wg)
 }
 
 // register apis
@@ -77,7 +81,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func monitorAndCloseWebServer(ws *http.Server, closeCh chan bool) {
+func monitorAndCloseWebServer(ws *http.Server, closeCh chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
 	<-closeCh
 	if err := ws.Close(); err != nil {
 		log.Fatalf("error while closing web server: %s", err)

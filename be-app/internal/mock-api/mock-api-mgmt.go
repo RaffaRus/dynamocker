@@ -8,7 +8,9 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -19,24 +21,31 @@ import (
 var mockApiList map[string]*MockApi = make(map[string]*MockApi)
 var folderPath string = ""
 
-func Init(closeAll chan bool) error {
+func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 
 	folderPath = config.GetMockApiFolder()
 
 	// load the stored APIs for the first time
 	if err := loadAPIsFromFolder(); err != nil {
-		return nil
+		return err
 	}
 
 	// periodically poll from the folder
 	// safe mechanism to recover from not-working observing goroutine
+	wg.Add(1)
 	go func(closeAll chan bool) {
+		defer wg.Done()
+		pollerInterval, err := strconv.Atoi(config.GetPollingInterval())
+		if err != nil {
+			log.Error("Could not convert poller interval to a number: ", err, ". Safe-polling will not be working")
+			return
+		}
 		for {
 			select {
 			case <-closeAll:
 				return
 			default:
-				time.Sleep(time.Minute)
+				time.Sleep(time.Duration(pollerInterval) * time.Second) // poll each 'config.GetPollingInterval()' seconds
 				if err := loadAPIsFromFolder(); err != nil {
 					log.Error("error while loading the stored APIs: ", err)
 				}
@@ -44,7 +53,8 @@ func Init(closeAll chan bool) error {
 		}
 	}(closeAll)
 
-	go ObserveFolder(closeAll)
+	wg.Add(1)
+	go ObserveFolder(closeAll, wg)
 	return nil
 }
 
@@ -95,7 +105,8 @@ func GetAPI(key string) (*MockApi, error) {
 	return mockApi, nil
 }
 
-func ObserveFolder(closeAll chan bool) {
+func ObserveFolder(closeAll chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
 	watcher, err := fsnotify.NewWatcher()
 	if folderPath == "" {
 		log.Error("the mock API folder has not been set-up")

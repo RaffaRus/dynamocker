@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -18,8 +20,9 @@ func main() {
 	fmt.Print("Hello there, this is DynaMocker")
 
 	closeCh := make(chan bool)
+	var wg sync.WaitGroup
 
-	go captureSisCall(closeCh)
+	go captureSisCall(closeCh, &wg)
 
 	// capture panics
 	defer handlePanic(closeCh)
@@ -28,7 +31,7 @@ func main() {
 	config.ReadVars()
 
 	// init the mocked api management
-	if err := mockapi.Init(closeCh); err != nil {
+	if err := mockapi.Init(closeCh, &wg); err != nil {
 		log.Errorf("error while reading the existing APIs: %s", err)
 	}
 
@@ -37,11 +40,28 @@ func main() {
 		log.Errorf("error while serving the web server: %s", err)
 	}
 
-	ws.Start(closeCh)
+	ws.Start(closeCh, &wg)
 
-	// exit after success
+	// attempt exit after success. wait some time for all waiting group to be done.
+	// force exit after that
 	log.Info("Dyanmocker successfully stopped.")
 	closeCh <- true
+	log.Info("Waiting for all the goroutines to be closed.")
+	wgDone := make(chan bool)
+	go func(wgDone chan bool) {
+		wg.Wait()
+		close(wgDone)
+	}(wgDone)
+waitingCycle:
+	for counter := 0; counter < 3; counter++ {
+		select {
+		case <-wgDone:
+			break waitingCycle // leading app exit
+		default:
+			log.Info("waiting one more sec before the waiting group is done")
+			time.Sleep(time.Second)
+		}
+	}
 	os.Exit(0)
 }
 
@@ -54,7 +74,8 @@ func handlePanic(ch chan bool) {
 	os.Exit(1)
 }
 
-func captureSisCall(closeCh chan bool) {
+func captureSisCall(closeCh chan bool, wg *sync.WaitGroup) {
+	wg.Add(1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
 	select {

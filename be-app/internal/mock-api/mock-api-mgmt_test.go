@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -52,8 +53,48 @@ func writeDummyMockApiFile(t *testing.T) *os.File {
 	return file
 }
 
+// check that the closeChannel works
 func TestMockApiInit(t *testing.T) {
+	reset(t)
 
+	// TODO copontinue w this test
+
+	// set mock api folder as a temp folder
+	if err := os.Setenv("DYNA_MOCK_API_FOLDER", t.TempDir()); err != nil {
+		t.Fatalf("cannot set env variable: %s", err)
+	}
+
+	// set polling time to 1 second to speed-up testing
+	if err := os.Setenv("POLLER_INTERVAL", "1"); err != nil {
+		t.Fatalf("cannot set env variable: %s", err)
+	}
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+	// start Init
+	err := Init(closeCh, &wg)
+	assert.Nil(t, err)
+	// send close trigger
+	closeCh <- true
+	// create support channel to wait for the wg to be done
+	wgDone := make(chan bool)
+	go func(wgDone chan bool) {
+		wg.Wait()
+		close(wgDone)
+	}(wgDone)
+	// wait for three seconds
+	for counter := 0; counter < 3; counter++ {
+		select {
+		case <-wgDone:
+			// in this case the wg has been emptied, everything worked as it is supposed to
+			return
+		default:
+			// Wait for
+			time.Sleep(time.Second)
+		}
+	}
+	t.Fatal("wg not emptied, something went wrong")
 }
 
 func TestLoadStoredAPIs(t *testing.T) {
