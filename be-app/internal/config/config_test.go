@@ -9,10 +9,10 @@ import (
 )
 
 type getterConfTest struct {
-	functionRes       func() (string, error)
-	defaultResult     string
-	overwrittenResult string
-	relevantKey       string
+	functionRes  func() string
+	defaultValue string
+	customValue  string
+	relevantKey  string
 }
 
 func TestConfig(t *testing.T) {
@@ -45,25 +45,23 @@ func TestConfig(t *testing.T) {
 func (c getterConfTest) Tester(t *testing.T) {
 
 	// test that Getter function returns default value
-	result, err := c.functionRes()
-	assert.Nil(t, err, "there should be no error")
-	assert.Equal(t, c.defaultResult, result, "getter returned an unexpected result")
+	result := c.functionRes()
+	assert.NotEqual(t, result, "", "there should be no error")
+	assert.Equal(t, c.defaultValue, result, "getter returned an unexpected result")
+
+	// set custom env var
+	os.Setenv(c.relevantKey, c.customValue)
 
 	// test that Getter function returns custom value
-	envVarList[c.relevantKey] = c.overwrittenResult
-	result, err = c.functionRes()
-	assert.Nil(t, err, "there should be no error")
-	assert.Equal(t, c.overwrittenResult, result, "getter does not return not-default folder", c.functionRes)
-
-	// test that Getter function returns the correct error when no key is found in the map
-	delete(envVarList, c.relevantKey)
-	_, err = c.functionRes()
-	assert.Equal(t, fmt.Errorf(fmt.Sprintf("element %s not found in the map", c.relevantKey)), err, "incorrect error returned from the getter")
+	result = c.functionRes()
+	assert.Equal(t, c.customValue, result, "getter does not return not-default folder", c.functionRes)
 
 }
 
 // it should read all the env variables set in the system and update the env variables saved in the package
 func TestReadVars(t *testing.T) {
+
+	fmt.Println("from test", envVarList)
 
 	// unset env variables if they exist already
 	for _, key := range []string{"DYNA_LOG_LEVEL", "DYNA_SERVER_PORT", "DYNA_MOCK_API_FOLDER"} {

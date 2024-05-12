@@ -22,11 +22,7 @@ func NewServer() (*WebServer, error) {
 	var err error
 
 	// set port
-	if webPort, err := config.GetServerPort(); err != nil {
-		return nil, fmt.Errorf("error while setting webserver port: %s", err)
-	} else {
-		ws.webPort = webPort
-	}
+	ws.webPort = config.GetServerPort()
 
 	ws.router = mux.NewRouter()
 

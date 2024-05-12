@@ -3,56 +3,53 @@ package mockapi
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
-	"net/url"
 	"os"
-	"path/filepath"
+	"path"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var dummyMockApiPath string = fmt.Sprintf("%s/internal/test-features/dummy_mock_api.json", execFolder())
-
-func execFolder() string {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Dir(ex)
-}
-
 // reset package map and folderPath variable
-func resetPackage(t *testing.T) {
+func reset(t *testing.T) {
 	mockApiList = make(map[string]*MockApi)
 	folderPath = ""
 	assert.Equal(t, 0, len(mockApiList))
+
 }
 
-func dummyMockApi(t *testing.T) *MockApi {
-	dummyUrl, err := url.Parse("/dummy-url")
-	if err != nil {
-		t.Fatalf("error while setting-up the summy URL :%s", err)
-	}
+func dummyMockApi() *MockApi {
 	return &MockApi{
-		name:         "dummy_mock_api",
-		URL:          *dummyUrl,
-		FilePath:     "/path/mock_api_folder/dummy_api.json",
+		name:         "dummy-mock-api",
+		URL:          "url.com",
+		FilePath:     os.TempDir(),
 		Added:        time.Now(),
 		LastModified: time.Now(),
 	}
 
 }
-func setupDummyMockApiFile(t *testing.T) {
-	mockApi := dummyMockApi(t)
+
+// write a dummy mock api file to the Temp folder. The temp folder
+// comes from os package
+func writeDummyMockApiFile(t *testing.T) *os.File {
+	mockApi := dummyMockApi()
+	file, err := os.CreateTemp("", "dummy-mock-api*.json")
+	if err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
 	data, err := json.Marshal(mockApi)
 	if err != nil {
+		file.Close()
 		t.Fatalf("error while marshaling dummy mock api :%s", err)
 	}
-	if err := os.WriteFile(dummyMockApiPath, data, fs.ModePerm); err != nil {
+	if _, err := file.Write([]byte(data)); err != nil {
+		file.Close()
 		t.Fatalf("error while writing dummy mock api to file :%s", err)
 	}
+	return file
 }
 
 func TestMockApiInit(t *testing.T) {
@@ -61,9 +58,23 @@ func TestMockApiInit(t *testing.T) {
 
 func TestLoadStoredAPIs(t *testing.T) {
 
-	// add mock apis to the map
+	// call function before defining any folder. This should log only
+	err := loadAPIsFromFolder()
+	assert.Equal(t, fmt.Errorf("the mock API folder has not been set-up"), err)
+
+	// set temp folder as the one contining the mock api files
+	folderPath = os.TempDir()
+	assert.Nil(t, loadAPIsFromFolder())
+
+	// add mock api
+	dummyMockApiFile := writeDummyMockApiFile(t)
+	defer dummyMockApiFile.Close()
 
 	// check that the apis have been loaded
+	assert.Nil(t, loadAPIsFromFolder(), "the function should return no error")
+	mockApiFileName, _ := strings.CutSuffix(path.Base(dummyMockApiFile.Name()), ".json")
+	_, ok := mockApiList[mockApiFileName]
+	assert.True(t, ok)
 }
 
 func TestGetAPIs(t *testing.T) {
@@ -93,20 +104,20 @@ func TestStopObserving(t *testing.T) {
 }
 
 func TestDetectedNewMockApi(t *testing.T) {
-	resetPackage(t)
+	reset(t)
 
 	// check path not ending with '.json'. This should only log
-	fmt.Println("Expected to LOG the Error: suffix '.json' not found in the /internal/test-features/dummy-api file")
-	detectedNewMockApi("/internal/test-features/dummy-api")
+	fmt.Println("Expected to LOG the Error: suffix '.json' not found in the /internal/testdata/dummy-api file")
+	detectedNewMockApi("/internal/testdata/dummy-api")
 
 	// valid mock api
-	detectedNewMockApi(dummyMockApiPath)
+	// detectedNewMockApi(dummyMockApiPath)
 
 	// not unmarshable mock api
-	detectedNewMockApi(dummyMockApiPath)
+	// detectedNewMockApi(dummyMockApiPath)
 
 	// not valid mock api
-	detectedNewMockApi(dummyMockApiPath)
+	// detectedNewMockApi(dummyMockApiPath)
 
 	// change dummy mock api content (same name) and check the new one replaces the old one
 	// this tests the ability to capture/handle modifications to the mock api json file
@@ -117,25 +128,28 @@ func TestDetectedModifiedMockApi(t *testing.T) {
 }
 
 func TestDetectedRemovedMockApi(t *testing.T) {
-	resetPackage(t)
+	reset(t)
 
-	// check path not ending with '.json'. This should only log
-	fmt.Println("Expected to LOG the Error: suffix '.json' not found in the /internal/test-features/dummy-api file")
-	detectedRemovedMockApi("/internal/test-features/dummy-api")
+	// check that in case of path not ending with '.json' the error is logger. This should only log
+	fmt.Println("Expected to LOG the Error: suffix '.json' not found in the /internal/testdata/dummy-api file")
+	detectedRemovedMockApi("/internal/testdata/dummy-api")
 
-	// check the not existing mock api in the package map
-	fmt.Println("Expected to LOG the INFO: mock api named '/internal/test-features/dummy-api' not found. Probably already removed it")
-	detectedRemovedMockApi(dummyMockApiPath)
+	// check that in case of not existing mock api, the error is logged. This should only log
+	fmt.Println("Expected to LOG the INFO: mock api named '/internal/testdata/dummy-api' not found. Probably already removed it")
+	detectedRemovedMockApi("/dummy-mock-api.json")
 
-	// add the mock api to the map
-	mockApiList["dummy_mock_api"] = dummyMockApi(t)
+	// add the mock api to the map and to the folder
+	dummyMockApiFile := writeDummyMockApiFile(t)
+	defer dummyMockApiFile.Close()
+	mockApiFileName, _ := strings.CutSuffix(path.Base(dummyMockApiFile.Name()), ".json")
+	mockApiList[mockApiFileName] = dummyMockApi()
 
 	// check that is exists
 	assert.Equal(t, 1, len(mockApiList))
 
 	// simulate file removal
-	detectedRemovedMockApi(dummyMockApiPath)
+	detectedRemovedMockApi(dummyMockApiFile.Name())
 
 	// check that it was removed
-	assert.Equal(t, 0, len(mockApiList), "mock api 'dummy_api' not deleted in the map")
+	assert.Equal(t, 0, len(mockApiList), "mock api 'dummy-mock-api' not deleted in the map")
 }

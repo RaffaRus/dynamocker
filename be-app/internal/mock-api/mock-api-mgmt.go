@@ -21,13 +21,10 @@ var folderPath string = ""
 
 func Init(closeAll chan bool) error {
 
-	var err error
-	if folderPath, err = config.GetMockApiFolder(); err != nil {
-		return fmt.Errorf("error while getting mock api folder: %s", err)
-	}
+	folderPath = config.GetMockApiFolder()
 
 	// load the stored APIs for the first time
-	if err := loadStoredAPIs(); err != nil {
+	if err := loadAPIsFromFolder(); err != nil {
 		return nil
 	}
 
@@ -40,7 +37,7 @@ func Init(closeAll chan bool) error {
 				return
 			default:
 				time.Sleep(time.Minute)
-				if err := loadStoredAPIs(); err != nil {
+				if err := loadAPIsFromFolder(); err != nil {
 					log.Error("error while loading the stored APIs: ", err)
 				}
 			}
@@ -53,7 +50,7 @@ func Init(closeAll chan bool) error {
 
 // loading the APIs from the mock api folder at startup
 // this function empties the mock api map and creates a new one
-func loadStoredAPIs() (err error) {
+func loadAPIsFromFolder() (err error) {
 
 	var files []fs.DirEntry
 	mockApiList = make(map[string]*MockApi)

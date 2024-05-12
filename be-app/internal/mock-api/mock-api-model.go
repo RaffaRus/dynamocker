@@ -1,14 +1,13 @@
 package mockapi
 
 import (
-	"net/url"
 	"time"
 )
 
 type MockApi struct {
 	name         string
-	URL          url.URL   `json:"url" ,validate:"base64url"`
-	FilePath     string    `json:"filePath" validate:"dirpath"`
-	Added        time.Time `json:"added" validate:"ltecsfield=InnerStructField.StartDate"`
-	LastModified time.Time `json:"lastModified" validate:"ltecsfield=InnerStructField.StartDate"`
+	URL          string    `json:"url" ,validate:"required"`
+	FilePath     string    `json:"filePath" validate:"dir,required"`
+	Added        time.Time `json:"added" validate:"required"`
+	LastModified time.Time `json:"lastModified" validate:"required"`
 }
