@@ -44,9 +44,9 @@ func main() {
 
 	// attempt exit after success. wait some time for all waiting group to be done.
 	// force exit after that
-	log.Info("Dyanmocker successfully stopped.")
-	closeCh <- true
-	log.Info("Waiting for all the goroutines to be closed.")
+	log.Info("dyanmocker successfully stopped.")
+	close(closeCh)
+	log.Info("waiting for all the goroutines to be closed.")
 	wgDone := make(chan bool)
 	go func(wgDone chan bool) {
 		wg.Wait()
@@ -69,8 +69,8 @@ func handlePanic(ch chan bool) {
 	if err := recover(); err != nil {
 		log.Fatalf("Recovered panic: %f", err)
 	}
-	log.Info("Dyanmocker stopped after panic.")
-	ch <- true
+	log.Info("dyanmocker stopped after panic.")
+	close(ch)
 	os.Exit(1)
 }
 
@@ -81,7 +81,7 @@ func captureSisCall(closeCh chan bool, wg *sync.WaitGroup) {
 	select {
 	case signal := <-sigChan:
 		log.Infof("received signal from OS: %s. Shutting down.", signal)
-		closeCh <- true
+		close(closeCh)
 		return
 	case <-closeCh:
 		return

@@ -33,28 +33,10 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 	// periodically poll from the folder
 	// safe mechanism to recover from not-working observing goroutine
 	wg.Add(1)
-	go func(closeAll chan bool) {
-		defer wg.Done()
-		pollerInterval, err := strconv.Atoi(config.GetPollingInterval())
-		if err != nil {
-			log.Error("Could not convert poller interval to a number: ", err, ". Safe-polling will not be working")
-			return
-		}
-		for {
-			select {
-			case <-closeAll:
-				return
-			default:
-				time.Sleep(time.Duration(pollerInterval) * time.Second) // poll each 'config.GetPollingInterval()' seconds
-				if err := loadAPIsFromFolder(); err != nil {
-					log.Error("error while loading the stored APIs: ", err)
-				}
-			}
-		}
-	}(closeAll)
-
+	go backUpPollingCycle(closeAll, wg)
 	wg.Add(1)
-	go ObserveFolder(closeAll, wg)
+	go observeFolder(closeAll, wg)
+	time.Sleep(500 * time.Millisecond) // let goroutines start
 	return nil
 }
 
@@ -105,8 +87,11 @@ func GetAPI(key string) (*MockApi, error) {
 	return mockApi, nil
 }
 
-func ObserveFolder(closeAll chan bool, wg *sync.WaitGroup) {
-	defer wg.Done()
+func observeFolder(closeAll chan bool, wg *sync.WaitGroup) {
+	defer func() {
+		log.Debug("wg.Done observeFolder")
+		wg.Done()
+	}()
 	watcher, err := fsnotify.NewWatcher()
 	if folderPath == "" {
 		log.Error("the mock API folder has not been set-up")
@@ -119,6 +104,7 @@ func ObserveFolder(closeAll chan bool, wg *sync.WaitGroup) {
 		log.Fatal("could not setup new watcher: ", err)
 	}
 	defer stopObserving(watcher)
+detectingCycle:
 	for {
 		select {
 		case event, ok := <-watcher.Events:
@@ -148,12 +134,13 @@ func ObserveFolder(closeAll chan bool, wg *sync.WaitGroup) {
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
-				log.Error("returned not ok from watcher Errors")
+				log.Errorf("returned not ok from watcher Errors. err: %s", err)
 				return
 			}
 			log.Println("error from watcher: ", err)
 		case <-closeAll:
-			stopObserving(watcher)
+			log.Infof("received signal to close the folder observation")
+			break detectingCycle
 		}
 	}
 }
@@ -168,6 +155,31 @@ func stopObserving(watcher *fsnotify.Watcher) {
 		}
 		log.Info("stopped watching the mock api folder")
 		watcher = nil
+	}
+}
+
+func backUpPollingCycle(closeAll chan bool, wg *sync.WaitGroup) {
+	defer func() {
+		log.Debug("wg.Done backUpPollingCycle")
+		wg.Done()
+	}()
+	pollerInterval, err := strconv.Atoi(config.GetPollingInterval())
+	if err != nil {
+		log.Error("could not convert poller interval to a number: ", err, ". Safe-polling will not be working")
+		return
+	}
+pollingCycle:
+	for {
+		select {
+		case <-closeAll:
+			log.Infof("received signal to close the backup polling cycle")
+			break pollingCycle
+		default:
+			time.Sleep(time.Duration(pollerInterval) * time.Second) // poll each 'config.GetPollingInterval()' seconds
+			if err := loadAPIsFromFolder(); err != nil {
+				log.Error("error while loading the stored APIs: ", err)
+			}
+		}
 	}
 }
 

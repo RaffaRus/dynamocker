@@ -70,19 +70,22 @@ func TestMockApiInit(t *testing.T) {
 	}
 
 	// make channel and waiting group
-	closeCh := make(chan bool)
+	closeCh := make(chan bool, 100)
 	var wg sync.WaitGroup
 	// start Init
 	err := Init(closeCh, &wg)
 	assert.Nil(t, err)
-	// send close trigger
-	closeCh <- true
+
 	// create support channel to wait for the wg to be done
-	wgDone := make(chan bool)
+	wgDone := make(chan bool, 100)
 	go func(wgDone chan bool) {
 		wg.Wait()
 		close(wgDone)
 	}(wgDone)
+
+	// send close trigger
+	close(closeCh)
+
 	// wait for three seconds
 	for counter := 0; counter < 3; counter++ {
 		select {
@@ -90,7 +93,7 @@ func TestMockApiInit(t *testing.T) {
 			// in this case the wg has been emptied, everything worked as it is supposed to
 			return
 		default:
-			// Wait for
+			// Wait for ch being wg to be done
 			time.Sleep(time.Second)
 		}
 	}
