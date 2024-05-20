@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const observeFolderWitingTimeMilliseconds = 200
+
 // reset package map and folderPath variable
 func reset(t *testing.T) {
 	mockApiList = make(map[string]*MockApi)
@@ -23,13 +25,28 @@ func reset(t *testing.T) {
 
 func dummyMockApi() *MockApi {
 	return &MockApi{
-		name:         "dummy-mock-api",
+		Name:         "dummy-mock-api",
 		URL:          "url.com",
 		FilePath:     os.TempDir(),
 		Added:        time.Now(),
 		LastModified: time.Now(),
 	}
 
+}
+
+func dummyMockApiArray() []*MockApi {
+	var mockApis []*MockApi
+	for i := 0; i < 5; i++ {
+		mockApis = append(mockApis,
+			&MockApi{
+				Name:         fmt.Sprintf("dummy-mock-api-%d", i),
+				URL:          "url.com",
+				FilePath:     os.TempDir(),
+				Added:        time.Now(),
+				LastModified: time.Now(),
+			})
+	}
+	return mockApis
 }
 
 // write a dummy mock api file to the Temp folder. The temp folder
@@ -41,6 +58,13 @@ func writeDummyMockApiFile(t *testing.T) *os.File {
 		file.Close()
 		t.Fatal(err)
 	}
+	defer file.Close()
+	name, ok := strings.CutSuffix(path.Base(file.Name()), ".json")
+	if ok != true {
+		file.Close()
+		t.Fatal("malformed string modification")
+	}
+	mockApi.Name = name
 	data, err := json.Marshal(mockApi)
 	if err != nil {
 		file.Close()
@@ -57,8 +81,6 @@ func writeDummyMockApiFile(t *testing.T) *os.File {
 func TestMockApiInit(t *testing.T) {
 	reset(t)
 
-	// TODO copontinue w this test
-
 	// set mock api folder as a temp folder
 	if err := os.Setenv("DYNA_MOCK_API_FOLDER", t.TempDir()); err != nil {
 		t.Fatalf("cannot set env variable: %s", err)
@@ -70,14 +92,14 @@ func TestMockApiInit(t *testing.T) {
 	}
 
 	// make channel and waiting group
-	closeCh := make(chan bool, 100)
+	closeCh := make(chan bool)
 	var wg sync.WaitGroup
 	// start Init
 	err := Init(closeCh, &wg)
 	assert.Nil(t, err)
 
 	// create support channel to wait for the wg to be done
-	wgDone := make(chan bool, 100)
+	wgDone := make(chan bool)
 	go func(wgDone chan bool) {
 		wg.Wait()
 		close(wgDone)
@@ -101,6 +123,7 @@ func TestMockApiInit(t *testing.T) {
 }
 
 func TestLoadStoredAPIs(t *testing.T) {
+	reset(t)
 
 	// call function before defining any folder. This should log only
 	err := loadAPIsFromFolder()
@@ -112,7 +135,10 @@ func TestLoadStoredAPIs(t *testing.T) {
 
 	// add mock api
 	dummyMockApiFile := writeDummyMockApiFile(t)
-	defer dummyMockApiFile.Close()
+	defer func() {
+		dummyMockApiFile.Close()
+		os.Remove(dummyMockApiFile.Name())
+	}()
 
 	// check that the apis have been loaded
 	assert.Nil(t, loadAPIsFromFolder(), "the function should return no error")
@@ -122,24 +148,376 @@ func TestLoadStoredAPIs(t *testing.T) {
 }
 
 func TestGetAPIs(t *testing.T) {
+	reset(t)
+	assert.Empty(t, GetAPIs(), "GetAPIs() should return empty array")
 
-	// add mock-apis to the map
+	// add apis to the map and check length
+	mockApis := dummyMockApiArray()
+	for i := 0; i < 5; i++ {
+		mockApiList[mockApis[i].Name] = mockApis[i]
+	}
+	assert.Equal(t, 5, len(GetAPIs()))
 
-	// check number of a apis returned
+	// remove apis from the map and check it is empty
+	reset(t)
+	assert.Equal(t, 0, len(GetAPIs()))
 
 }
 
 func TestGetAPI(t *testing.T) {
+	reset(t)
 
 	// check not-existing key
+	key := "api"
+	_, err := GetAPI(key)
+	assert.Equal(t, err, fmt.Errorf("requested mockApi %s has not been found", key))
 
 	// add mock api to the map
+	mockApi := dummyMockApi()
+	mockApiList[mockApi.Name] = mockApi
 
 	// check the get works
+	res, err := GetAPI(mockApi.Name)
+	assert.Nil(t, err)
+	assert.Equal(t, res, mockApi)
+}
+
+func TestObserveFolderNotSet(t *testing.T) {
+	reset(t)
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// create support channel to wait for the wg to be done
+	wgDone := make(chan bool)
+	wg.Add(1)
+	go func(wgDone chan bool) {
+		wg.Wait()
+		close(wgDone)
+	}(wgDone)
+
+	go observeFolder(closeCh, &wg)
+	time.Sleep(observeFolderWitingTimeMilliseconds * time.Millisecond)
+
+	// check wgDone has been closed. it has been closed because the
+	// folder has not been setup. this logs an error
+	_, ok := <-wgDone
+	assert.False(t, ok)
+}
+
+func TestObserveFolderNotExisting(t *testing.T) {
+	reset(t)
+
+	// set mock api folder as a temp folder
+	folderPath = "/asdasd"
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// create support channel to wait for the wg to be done
+	wgDone := make(chan bool)
+	wg.Add(1)
+	go func(wgDone chan bool) {
+		wg.Wait()
+		close(wgDone)
+	}(wgDone)
+
+	go observeFolder(closeCh, &wg)
+	time.Sleep(observeFolderWitingTimeMilliseconds * time.Millisecond)
+
+	// check wgDone has been closed because the folder was not found
+	select {
+	case <-wgDone:
+		break
+	default:
+		t.Fatal("the observing goroutine should have been stopped")
+	}
 
 }
 
-func TestObserveFolder(t *testing.T) {
+func TestObserveFolderCorrectlyClosing(t *testing.T) {
+	reset(t)
+
+	// set mock api folder as a temp folder
+	folderPath = os.TempDir()
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// create support channel to wait for the wg to be done
+	wgDone := make(chan bool)
+	wg.Add(1)
+	go func(wgDone chan bool) {
+		wg.Wait()
+		close(wgDone)
+	}(wgDone)
+
+	go observeFolder(closeCh, &wg)
+	close(closeCh)
+	time.Sleep(200 * time.Millisecond)
+
+	// check wgDone has been closed after the 'close' cmd
+	select {
+	case <-wgDone:
+		break
+	default:
+		t.Fatal("the observing goroutine should have been stopped")
+	}
+}
+
+func TestObserveFolderNoJson(t *testing.T) {
+	reset(t)
+
+	// set mock api folder as a temp folder
+	folderPath = os.TempDir()
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// start observing
+	go observeFolder(closeCh, &wg)
+	defer close(closeCh)
+
+	time.Sleep(200 * time.Millisecond)
+
+	// write file without the *.json suffix
+	notJsonFile, err := os.CreateTemp("", "dummy-mock-api*.tmp")
+	if err != nil {
+		notJsonFile.Close()
+		t.Fatal(err)
+	}
+	defer os.Remove(notJsonFile.Name())
+	data, err := json.Marshal(dummyMockApi())
+	if err != nil {
+		notJsonFile.Close()
+		t.Fatalf("error while marshaling dummy mock api :%s", err)
+	}
+	if _, err := notJsonFile.Write([]byte(data)); err != nil {
+		notJsonFile.Close()
+		t.Fatalf("error while writing dummy mock api to file :%s", err)
+	}
+	// check the mock api has not been loaded
+	assert.Empty(t, mockApiList)
+}
+
+func TestObserveFolderNewApi(t *testing.T) {
+	reset(t)
+
+	// set mock api folder as a temp folder
+	folderPath = os.TempDir()
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// start observing
+	go observeFolder(closeCh, &wg)
+	defer close(closeCh)
+
+	time.Sleep(1000 * time.Millisecond)
+
+	// write proper mock api file
+	file, err := os.CreateTemp("", "dummy-mock-api*.json")
+	if err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	mockApi := dummyMockApi()
+	data, err := json.Marshal(mockApi)
+	if err != nil {
+		file.Close()
+		t.Fatalf("error while marshaling dummy mock api :%s", err)
+	}
+	if _, err := file.Write([]byte(data)); err != nil {
+		file.Close()
+		t.Fatalf("error while writing dummy mock api to file :%s", err)
+	}
+
+	time.Sleep(200 * time.Millisecond)
+
+	// check the mock api has been loaded
+	assert.Equal(t, 1, len(mockApiList))
+	retrievedMockApi, ok := mockApiList[mockApi.Name]
+	assert.True(t, ok)
+	assert.Equal(t, mockApi, retrievedMockApi)
+
+}
+
+func TestObserveFolderModifiedApi(t *testing.T) {
+	reset(t)
+
+	// set mock api folder as a temp folder
+	folderPath = os.TempDir()
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// start observing
+	go observeFolder(closeCh, &wg)
+	defer close(closeCh)
+
+	// write mock api file
+	file, err := os.CreateTemp("", "dummy-mock-api*.json")
+	if err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	mockApi := dummyMockApi()
+	data, err := json.Marshal(mockApi)
+	if err != nil {
+		file.Close()
+		t.Fatalf("error while marshaling dummy mock api :%s", err)
+	}
+	if _, err := file.Write([]byte(data)); err != nil {
+		file.Close()
+		t.Fatalf("error while writing dummy mock api to file :%s", err)
+	}
+	// check the mock api has been loaded
+	assert.Equal(t, 1, len(mockApiList))
+	retrievedMockApi, ok := mockApiList[mockApi.Name]
+	assert.True(t, ok)
+	assert.Equal(t, mockApi, retrievedMockApi)
+	file.Close()
+
+	// modify the file
+	file, err = os.OpenFile(mockApi.FilePath+mockApi.Name+".json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	mockApi.URL = "new_url"
+	data, err = json.Marshal(mockApi)
+	if err != nil {
+		file.Close()
+		t.Fatalf("error while marshaling dummy mock api :%s", err)
+	}
+	if _, err := file.Write([]byte(data)); err != nil {
+		file.Close()
+		t.Fatalf("error while writing dummy mock api to file :%s", err)
+	}
+
+	time.Sleep(200 * time.Millisecond)
+
+	// check the mock api has been loaded and that the mockApiList has been modified
+	assert.Equal(t, 1, len(mockApiList))
+	retrievedMockApi, ok = mockApiList[mockApi.Name]
+	assert.True(t, ok)
+	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
+	file.Close()
+
+	// // set mock api folder as a temp folder
+	// if err := os.Setenv("DYNA_MOCK_API_FOLDER", t.TempDir()); err != nil {
+	// 	t.Fatalf("cannot set env variable: %s", err)
+	// }
+
+	// // set polling time to 1 second to speed-up testing
+	// if err := os.Setenv("POLLER_INTERVAL", "1"); err != nil {
+	// 	t.Fatalf("cannot set env variable: %s", err)
+	// }
+
+	// // start observing folder
+	// wg.Add(1)
+	// go observeFolder(closeCh, &wg)
+
+	// time.Sleep(time.Second)
+
+}
+
+func TestObserveFolderRemovedApi(t *testing.T) {
+	reset(t)
+
+	// set mock api folder as a temp folder
+	folderPath = os.TempDir()
+
+	// make channel and waiting group
+	closeCh := make(chan bool)
+	var wg sync.WaitGroup
+
+	// create support channel to wait for the wg to be done
+	wgDone := make(chan bool)
+	wg.Add(1)
+	go func(wgDone chan bool) {
+		wg.Wait()
+		close(wgDone)
+	}(wgDone)
+
+	go observeFolder(closeCh, &wg)
+
+	// write file without the *.json suffix
+	notJsonFile, err := os.CreateTemp("", "dummy-mock-api*.tmp")
+	if err != nil {
+		notJsonFile.Close()
+		t.Fatal(err)
+	}
+	defer os.Remove(notJsonFile.Name())
+	data, err := json.Marshal(dummyMockApi())
+	if err != nil {
+		notJsonFile.Close()
+		t.Fatalf("error while marshaling dummy mock api :%s", err)
+	}
+	if _, err := notJsonFile.Write([]byte(data)); err != nil {
+		notJsonFile.Close()
+		t.Fatalf("error while writing dummy mock api to file :%s", err)
+	}
+	// check the mock api has not been loaded
+	assert.Empty(t, mockApiList)
+
+	// write proper mock api file
+	file, err := os.CreateTemp("", "dummy-mock-api*.json")
+	if err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	mockApi := dummyMockApi()
+	data, err = json.Marshal(mockApi)
+	if err != nil {
+		notJsonFile.Close()
+		t.Fatalf("error while marshaling dummy mock api :%s", err)
+	}
+	if _, err := notJsonFile.Write([]byte(data)); err != nil {
+		notJsonFile.Close()
+		t.Fatalf("error while writing dummy mock api to file :%s", err)
+	}
+	// check the mock api has not been loaded
+	assert.Equal(t, 1, len(mockApiList))
+	retrievedMockApi, ok := mockApiList[mockApi.Name]
+	assert.True(t, ok)
+	assert.Equal(t, mockApi, retrievedMockApi)
+
+	time.Sleep(observeFolderWitingTimeMilliseconds * time.Millisecond)
+
+	// check wgDone has been closed after the close cmd
+	select {
+	case <-wgDone:
+		break
+	default:
+		t.Fatal("the observing goroutine should have been stopped")
+	}
+
+	// // set mock api folder as a temp folder
+	// if err := os.Setenv("DYNA_MOCK_API_FOLDER", t.TempDir()); err != nil {
+	// 	t.Fatalf("cannot set env variable: %s", err)
+	// }
+
+	// // set polling time to 1 second to speed-up testing
+	// if err := os.Setenv("POLLER_INTERVAL", "1"); err != nil {
+	// 	t.Fatalf("cannot set env variable: %s", err)
+	// }
+
+	// // start observing folder
+	// wg.Add(1)
+	// go observeFolder(closeCh, &wg)
+
+	// time.Sleep(time.Second)
 
 }
 
@@ -184,7 +562,10 @@ func TestDetectedRemovedMockApi(t *testing.T) {
 
 	// add the mock api to the map and to the folder
 	dummyMockApiFile := writeDummyMockApiFile(t)
-	defer dummyMockApiFile.Close()
+	defer func() {
+		dummyMockApiFile.Close()
+		os.Remove(dummyMockApiFile.Name())
+	}()
 	mockApiFileName, _ := strings.CutSuffix(path.Base(dummyMockApiFile.Name()), ".json")
 	mockApiList[mockApiFileName] = dummyMockApi()
 

@@ -18,16 +18,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var mockApiList map[string]*MockApi = make(map[string]*MockApi)
-var folderPath string = ""
+type MockMgmt struct {
+	mockApiList map[string]*MockApi
+	folderPath  string
+	mutex       *sync.Mutex
+}
 
-func Init(closeAll chan bool, wg *sync.WaitGroup) error {
+func Init(closeAll chan bool, wg *sync.WaitGroup) (MockMgmt, error) {
 
-	folderPath = config.GetMockApiFolder()
+	mockMgmt := MockMgmt{
+		mockApiList: make(map[string]*MockApi),
+		folderPath:  config.GetMockApiFolder(),
+		mutex:       &sync.Mutex{},
+	}
 
 	// load the stored APIs for the first time
-	if err := loadAPIsFromFolder(); err != nil {
-		return err
+	if err := mockMgmt.loadAPIsFromFolder(); err != nil {
+		return MockMgmt{}, err
 	}
 
 	// periodically poll from the folder
@@ -42,17 +49,19 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 
 // loading the APIs from the mock api folder at startup
 // this function empties the mock api map and creates a new one
-func loadAPIsFromFolder() (err error) {
+func (m MockMgmt) loadAPIsFromFolder() (err error) {
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	var files []fs.DirEntry
-	mockApiList = make(map[string]*MockApi)
 
 	// get path from config package
-	if folderPath == "" {
+	if m.folderPath == "" {
 		return fmt.Errorf("the mock API folder has not been set-up")
 	}
 
-	if files, err = os.ReadDir(folderPath); err != nil {
+	if files, err = os.ReadDir(m.folderPath); err != nil {
 		return fmt.Errorf("error while getting entries from the mock api folder: %s", err)
 	}
 
@@ -62,7 +71,7 @@ func loadAPIsFromFolder() (err error) {
 			continue
 		}
 
-		detectedNewMockApi(folderPath + "/" + file.Name())
+		detectedNewMockApi(m.folderPath + "/" + file.Name())
 
 	}
 
@@ -93,16 +102,21 @@ func observeFolder(closeAll chan bool, wg *sync.WaitGroup) {
 		wg.Done()
 	}()
 	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Error("could not setup new watcher: ", err)
+		return
+	}
 	if folderPath == "" {
 		log.Error("the mock API folder has not been set-up")
 		return
 	} else {
-		watcher.Add(folderPath)
-		log.Info("started watching path ", folderPath)
+		err := watcher.Add(folderPath)
+		if err != nil {
+			log.Error("could add folder to the watcher: ", err)
+			return
+		}
 	}
-	if err != nil {
-		log.Fatal("could not setup new watcher: ", err)
-	}
+	log.Info("started watching path ", folderPath)
 	defer stopObserving(watcher)
 detectingCycle:
 	for {
@@ -114,7 +128,7 @@ detectingCycle:
 			}
 			fileName := path.Base(event.Name)
 			// we are interested in modifications to the *.json files
-			if !strings.HasSuffix("*.json", fileName) {
+			if !strings.HasSuffix(".json", fileName) {
 				continue
 			}
 			// new api
@@ -222,7 +236,7 @@ func detectedNewMockApi(pathToFile string) {
 		return
 	}
 
-	mockApi.name = fileName
+	mockApi.Name = fileName
 	mockApiList[fileName] = &mockApi
 
 	log.Info("loaded ", fileName, " mock API")
