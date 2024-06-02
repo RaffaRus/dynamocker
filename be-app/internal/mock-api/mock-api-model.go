@@ -11,6 +11,7 @@ import (
 //	FilePath - path where the file is stored, without the file name
 //	Added - timestamp of creation
 //	LastModified - timestamp of last modification
+//	TODO: add mocking payload
 type MockApi struct {
 	Name         string
 	URL          string    `json:"url" ,validate:"required"`

@@ -18,23 +18,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type MockMgmt struct {
-	mockApiList map[string]*MockApi
-	folderPath  string
-	mutex       *sync.Mutex
-}
+func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 
-func Init(closeAll chan bool, wg *sync.WaitGroup) (MockMgmt, error) {
-
-	mockMgmt := MockMgmt{
-		mockApiList: make(map[string]*MockApi),
-		folderPath:  config.GetMockApiFolder(),
-		mutex:       &sync.Mutex{},
-	}
+	mockApiList = make(map[string]*MockApi)
+	folderPath = config.GetMockApiFolder()
 
 	// load the stored APIs for the first time
-	if err := mockMgmt.loadAPIsFromFolder(); err != nil {
-		return MockMgmt{}, err
+	if err := loadAPIsFromFolder(); err != nil {
+		return err
 	}
 
 	// periodically poll from the folder
@@ -49,19 +40,19 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) (MockMgmt, error) {
 
 // loading the APIs from the mock api folder at startup
 // this function empties the mock api map and creates a new one
-func (m MockMgmt) loadAPIsFromFolder() (err error) {
+func loadAPIsFromFolder() (err error) {
 
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
 	var files []fs.DirEntry
 
 	// get path from config package
-	if m.folderPath == "" {
+	if folderPath == "" {
 		return fmt.Errorf("the mock API folder has not been set-up")
 	}
 
-	if files, err = os.ReadDir(m.folderPath); err != nil {
+	if files, err = os.ReadDir(folderPath); err != nil {
 		return fmt.Errorf("error while getting entries from the mock api folder: %s", err)
 	}
 
@@ -71,7 +62,7 @@ func (m MockMgmt) loadAPIsFromFolder() (err error) {
 			continue
 		}
 
-		detectedNewMockApi(m.folderPath + "/" + file.Name())
+		detectedNewMockApi(folderPath + "/" + file.Name())
 
 	}
 
@@ -128,23 +119,26 @@ detectingCycle:
 			}
 			fileName := path.Base(event.Name)
 			// we are interested in modifications to the *.json files
-			if !strings.HasSuffix(".json", fileName) {
+			if !strings.HasSuffix(fileName, ".json") {
 				continue
 			}
 			// new api
 			if event.Has(fsnotify.Create) {
 				log.Info("new json detected in the folder: ", fileName)
 				detectedNewMockApi(event.Name)
+				// continue
 			}
 			// modified api
 			if event.Has(fsnotify.Write) {
 				log.Info("modified json detected in the folder: ", fileName)
 				detectedNewMockApi(event.Name)
+				// continue
 			}
 			// removed api
 			if event.Has(fsnotify.Remove) {
 				log.Info("removed json detected in the folder: ", fileName)
 				detectedRemovedMockApi(event.Name)
+				// continue
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {

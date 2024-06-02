@@ -9,6 +9,8 @@ import (
 )
 
 var mu sync.Mutex
+var mockApiList = make(map[string]*MockApi)
+var folderPath = ""
 
 // it must act on the file. observer will do its job
 func AddNewMockApiFile(fileName string, fileContent []byte) error {

@@ -32,7 +32,8 @@ func main() {
 
 	// init the mocked api management
 	if err := mockapi.Init(closeCh, &wg); err != nil {
-		log.Errorf("error while reading the existing APIs: %s", err)
+		log.Errorf("error initiating mockapi: %s", err)
+		panic("panic during mockapi initiations")
 	}
 
 	ws, err := webserver.NewServer()
