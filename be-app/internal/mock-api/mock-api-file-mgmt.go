@@ -1,11 +1,14 @@
 package mockapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/go-playground/validator/v10"
 )
 
 var mu sync.Mutex
@@ -13,14 +16,39 @@ var mockApiList = make(map[string]*MockApi)
 var folderPath = ""
 
 // it must act on the file. observer will do its job
-func AddNewMockApiFile(fileName string, fileContent []byte) error {
+func AddNewMockApiFile(fileName string, body []byte) error {
 
 	mu.Lock()
 	defer mu.Unlock()
 
+	// unmashal body
+	var mockApi MockApi
+	err := json.Unmarshal(body, &mockApi)
+	if err != nil {
+		err := fmt.Errorf("error while unmarshaling body from patch request: %s", err)
+		return err
+	}
+
+	// validate body
+	vtor := validator.New(validator.WithRequiredStructEnabled())
+	vtorErr := vtor.Struct(mockApi)
+	if vtorErr != nil {
+		valErrs := vtorErr.(validator.ValidationErrors)
+		var valErrsCumulative error
+		for _, valErr := range valErrs {
+			valErrsCumulative = fmt.Errorf("%s\n%s", valErrsCumulative, valErr.Error())
+		}
+		if valErrsCumulative != nil {
+			err := fmt.Errorf("invalid mock api passed from post request: %s", valErrsCumulative)
+			return err
+		}
+	}
+
+	// retrieve file path
 	filePath := folderPath + "/" + fileName + ".json"
 
-	if err := os.WriteFile(filePath, fileContent, fs.ModePerm); err != nil {
+	// write mockapi
+	if err := os.WriteFile(filePath, body, fs.ModePerm); err != nil {
 		return fmt.Errorf("file %s not created: %s", filePath, err)
 	}
 

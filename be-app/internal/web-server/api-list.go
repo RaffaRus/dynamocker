@@ -2,12 +2,10 @@ package webserver
 
 import (
 	mockapi "dynamocker/internal/mock-api"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -52,7 +50,14 @@ func deleteMockApis(w http.ResponseWriter, r *http.Request) {
 // get mock api by id
 func getMockApi(w http.ResponseWriter, r *http.Request) {
 	key := r.PathValue("id")
+	if key == "" {
+		err := fmt.Errorf("key to be deleted not recovered")
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	if mockApi, err := mockapi.GetAPI(key); err != nil {
+		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	} else {
@@ -72,25 +77,14 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		err := fmt.Errorf("error while reading request body: %s", err)
+		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var mockApi mockapi.MockApi
-	err = json.Unmarshal(body, &mockApi)
-	if err != nil {
-		log.Errorf("error while unmarshaling body from post request: %s", err)
-		return
-	}
-
-	vtor := validator.New(validator.WithRequiredStructEnabled())
-	err = vtor.Struct(mockApi)
-	if err != nil {
-		log.Errorf("invalid mock api passed from post request: %s", err)
-		return
-	}
-
 	if err = mockapi.AddNewMockApiFile(key, body); err != nil {
+		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,21 +104,9 @@ func patchMockApi(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		err := fmt.Errorf("error while reading request body: %s", err)
+		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var mockApi mockapi.MockApi
-	err = json.Unmarshal(body, &mockApi)
-	if err != nil {
-		log.Errorf("error while unmarshaling body from patch request: %s", err)
-		return
-	}
-
-	vtor := validator.New(validator.WithRequiredStructEnabled())
-	err = vtor.Struct(mockApi)
-	if err != nil {
-		log.Errorf("invalid mock api passed through patch request: %s", err)
 		return
 	}
 
@@ -147,7 +129,9 @@ func deleteMockApi(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	if err := mockapi.RemoveMockApiFile(key); err == nil {
-		http.Error(w, "requested mockAPI %s not found", http.StatusNotFound)
+		err := fmt.Errorf("error while removing the mocking api: %s", err)
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
