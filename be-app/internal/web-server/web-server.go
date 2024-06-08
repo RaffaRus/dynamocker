@@ -54,6 +54,7 @@ func (ws WebServer) Start(closeCh chan bool, wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		log.Info("started web server")
 		if err := srv.ListenAndServe(); err != nil {
 			log.Debugf("web server closed: %s", err)
 		}
@@ -68,12 +69,14 @@ func (ws WebServer) registerApis() error {
 	for _, api := range ws.apiList {
 		for method, handler := range api.handler {
 			ws.router.HandleFunc("/dynamocker/api/"+api.resource, handler).Methods(string(method))
+			// ws.router.Path("/dynamocker/api/" + api.resource).HandlerFunc(handler).Methods(string(method))
 		}
 	}
 	return nil
 }
 
 // middleware used for logging the incoming requests
+// TODO: improve middleware logging
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.RequestURI)

@@ -35,6 +35,7 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 	wg.Add(1)
 	go observeFolder(closeAll, wg)
 	time.Sleep(500 * time.Millisecond) // let goroutines start
+	log.Info("mocking-mgmt terminated the initialization phase")
 	return nil
 }
 
@@ -122,23 +123,15 @@ detectingCycle:
 			if !strings.HasSuffix(fileName, ".json") {
 				continue
 			}
-			// new api
-			if event.Has(fsnotify.Create) {
-				log.Info("new json detected in the folder: ", fileName)
-				detectedNewMockApi(event.Name)
-				// continue
-			}
-			// modified api
+			// any modification to the api file
 			if event.Has(fsnotify.Write) {
 				log.Info("modified json detected in the folder: ", fileName)
 				detectedNewMockApi(event.Name)
-				// continue
 			}
-			// removed api
+			// removed api file
 			if event.Has(fsnotify.Remove) {
 				log.Info("removed json detected in the folder: ", fileName)
 				detectedRemovedMockApi(event.Name)
-				// continue
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {

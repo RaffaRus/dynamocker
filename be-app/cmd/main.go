@@ -45,6 +45,7 @@ func main() {
 
 	// attempt exit after success. wait some time for all waiting group to be done.
 	// force exit after that
+	<-closeCh
 	log.Info("dyanmocker successfully stopped.")
 	close(closeCh)
 	log.Info("waiting for all the goroutines to be closed.")

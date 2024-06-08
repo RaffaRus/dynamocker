@@ -21,11 +21,15 @@ func AddNewMockApiFile(fileName string, body []byte) error {
 	mu.Lock()
 	defer mu.Unlock()
 
+	if folderPath == "" {
+		return fmt.Errorf("the mock API folder has not been set-up")
+	}
+
 	// unmashal body
 	var mockApi MockApi
 	err := json.Unmarshal(body, &mockApi)
 	if err != nil {
-		err := fmt.Errorf("error while unmarshaling body from patch request: %s", err)
+		err := fmt.Errorf("error while unmarshaling body: %s", err)
 		return err
 	}
 

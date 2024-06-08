@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // List of the environment variables to be checked. The corresponding
@@ -30,10 +32,12 @@ func ReadVars() {
 
 	fmt.Println("from function", envVarList)
 	for env := range envVarList {
-		fmt.Printf("looking for the key %s\n", env)
+		log.Debugf("looking for the key %s\n", env)
 		if val := os.Getenv(env); val != "" {
-			fmt.Printf("found the %s env variable\n", fmt.Sprintf("[env]: %s", val))
+			log.Infof("found the %s env variable with value = %s\n", env, val)
 			envVarList[env] = val
+		} else {
+			log.Infof("env variable %s not found, using default value = %s\n", env, envVarList[env])
 		}
 	}
 }

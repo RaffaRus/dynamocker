@@ -1,7 +1,6 @@
 package mockapi
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -11,10 +10,10 @@ import (
 type MockApi struct {
 
 	// name of the file without the path and the json suffix
-	Name string
+	Name string `json:"name" validate:"required"`
 
 	// url where this MockApi will be served
-	URL string `json:"url" ,validate:"required"`
+	URL string `json:"url" validate:"required"`
 
 	// path where the file is stored, without the file name
 	FilePath string `json:"filePath" validate:"dir,required"`
@@ -29,8 +28,8 @@ type MockApi struct {
 }
 
 type Response struct {
-	Get    *json.RawMessage `json:"get,omitempty" validate:"json"`
-	Patch  *json.RawMessage `json:"patch,omitempty" validate:"json"`
-	Post   *json.RawMessage `json:"post,omitempty" validate:"json"`
-	Delete *json.RawMessage `json:"delete,omitempty" validate:"json"`
+	Get    *string `json:"get,omitempty" validate:"omitempty,json"`
+	Patch  *string `json:"patch,omitempty" validate:"omitempty,json"`
+	Post   *string `json:"post,omitempty" validate:"omitempty,json"`
+	Delete *string `json:"delete,omitempty" validate:"omitempty,json"`
 }

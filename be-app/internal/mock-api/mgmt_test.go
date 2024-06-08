@@ -23,18 +23,18 @@ func reset(t *testing.T) {
 	assert.Equal(t, 0, len(mockApiList))
 }
 
-func dummyMockApi() *MockApi {
-	return &MockApi{
+func dummyMockApi() MockApi {
+	return MockApi{
 		Name:         fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:          "url.com",
 		FilePath:     os.TempDir(),
 		Added:        time.Now(),
 		LastModified: time.Now(),
 		Responses: Response{
-			Get:    ptr(json.RawMessage(`{"valid_json":true,"body":"this is the response"}`)),
-			Patch:  ptr(json.RawMessage(`{"example_patch_body":"this is a string returned from patch operation"}`)),
-			Post:   ptr(json.RawMessage(`{"error":"posted an invalid element"}`)),
-			Delete: ptr(json.RawMessage(`{"response":"removed the item number 3"}`)),
+			Get:    ptr(`{"valid_json":true,"body":"this is the response"}`),
+			Patch:  ptr(`{"example_patch_body":"this is a string returned from patch operation"}`),
+			Post:   ptr(`{"error":"posted an invalid element"}`),
+			Delete: ptr(`{"response":"removed the item number 3"}`),
 		},
 	}
 }
@@ -50,10 +50,10 @@ func dummyMockApiArray() []*MockApi {
 				Added:        time.Now(),
 				LastModified: time.Now(),
 				Responses: Response{
-					Get:    ptr(json.RawMessage(`{"valid_json":true,"body":"this is the response"}`)),
-					Patch:  ptr(json.RawMessage(`{"example_patch_body":"this is a string returned from patch operation"}`)),
-					Post:   ptr(json.RawMessage(`{"error":"posted an invalid element"}`)),
-					Delete: ptr(json.RawMessage(`{"response":"removed the item number 3"}`)),
+					Get:    ptr(`{"valid_json":true,"body":"this is the response"}`),
+					Patch:  ptr(`{"example_patch_body":"this is a string returned from patch operation"}`),
+					Post:   ptr(`{"error":"posted an invalid element"}`),
+					Delete: ptr(`{"response":"removed the item number 3"}`),
 				},
 			})
 	}
@@ -62,7 +62,7 @@ func dummyMockApiArray() []*MockApi {
 
 // write a dummy mock api file to the Temp folder. The temp folder
 // comes from os package
-func writeDummyMockApiFile(t *testing.T) (*os.File, *MockApi) {
+func writeDummyMockApiFile(t *testing.T) (*os.File, MockApi) {
 	mockApi := dummyMockApi()
 	file, err := os.CreateTemp("", "dummy-mock-api-*.json")
 	if err != nil {
@@ -185,12 +185,12 @@ func TestGetAPI(t *testing.T) {
 
 	// add mock api to the map
 	mockApi := dummyMockApi()
-	mockApiList[mockApi.Name] = mockApi
+	mockApiList[mockApi.Name] = &mockApi
 
 	// check the get works
 	res, err := GetAPI(mockApi.Name)
 	assert.Nil(t, err)
-	assert.Equal(t, res, mockApi)
+	assert.Equal(t, *res, mockApi)
 }
 
 func TestObserveFolderNotSet(t *testing.T) {
@@ -362,10 +362,10 @@ func TestObserveFolder(t *testing.T) {
 	nowTime := time.Now()
 	mockApi.LastModified = nowTime
 	mockApi.URL = "newUrl.com"
-	mockApi.Responses.Delete = ptr(json.RawMessage(`{"new_delete":"body"}`))
-	mockApi.Responses.Get = ptr(json.RawMessage(`{"new_get":"body"}`))
-	mockApi.Responses.Patch = ptr(json.RawMessage(`{"new_patch":"body"}`))
-	mockApi.Responses.Post = ptr(json.RawMessage(`{"new_post":"body"}`))
+	mockApi.Responses.Delete = ptr(`{"new_delete":"body"}`)
+	mockApi.Responses.Get = ptr(`{"new_get":"body"}`)
+	mockApi.Responses.Patch = ptr(`{"new_patch":"body"}`)
+	mockApi.Responses.Post = ptr(`{"new_post":"body"}`)
 	data, err := json.Marshal(mockApi)
 	if err != nil {
 		file.Close()
