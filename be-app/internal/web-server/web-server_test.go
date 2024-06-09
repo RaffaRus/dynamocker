@@ -282,8 +282,59 @@ func TestPostMockApi(t *testing.T) {
 }
 
 func TestPatch(t *testing.T) {
-	// TODO complete test
+	// setup server and mockApi mgmt
+	webServerTest := setup(t)
+
+	// wait
+	time.Sleep(50 * time.Millisecond)
+
+	// write mock api
+	_, mockApi := writeDummyMockApiFile(t)
+
+	defer func() {
+		removeMockApiFile(t, mockApi)
+	}()
+
+	// wait
+	time.Sleep(50 * time.Millisecond)
+
+	assert.Equal(t, 1, len(mockapi.GetAPIs()))
+
+	// test patch api
+	mockApi.URL = "new-url.it"
+	newTime := time.Now()
+	mockApi.LastModified = newTime
+	mockApi.Responses.Get = ptr(`{"new_get":true,"body":"new response"}`)
+	mockApi.Responses.Delete = ptr(`{"new_delete":"deleted"}`)
+	mockApi.Responses.Post = ptr(`{"new_post":1,"success":true}`)
+	mockApi.Responses.Patch = ptr(`{"patched":"yes","id":3}`)
+	url := "/dynamocker/api/mock-api/" + mockApi.Name
+	r := httptest.NewRecorder()
+	bytesPatch, err := json.Marshal(mockApi)
+	if err != nil {
+		t.Fatalf("error while marshalign object : %s", err)
+	}
+	webServerTest.router.ServeHTTP(r, httptest.NewRequest("PATCH", url, bytes.NewBuffer(bytesPatch)))
+	assert.Equal(t, http.StatusNoContent, r.Code)
+
+	// wait
+	time.Sleep(50 * time.Millisecond)
+
+	// check that the mockApi has been modified
+	currentMockApi, err := mockapi.GetAPI(mockApi.Name)
+	assert.Nil(t, err)
+	assert.Equal(t, currentMockApi.URL, mockApi.URL)
+	assert.Equal(t, currentMockApi.Name, mockApi.Name)
+	assert.Equal(t, os.TempDir(), mockApi.FilePath)
+	assert.Equal(t, currentMockApi.Responses.Get, mockApi.Responses.Get)
+	assert.Equal(t, currentMockApi.Responses.Post, mockApi.Responses.Post)
+	assert.Equal(t, currentMockApi.Responses.Delete, mockApi.Responses.Delete)
+	assert.Equal(t, currentMockApi.Responses.Patch, mockApi.Responses.Patch)
+	// time cannot be compared using the "==" operator
+	assert.True(t, mockApi.Added.Equal(currentMockApi.Added))
+	assert.True(t, mockApi.LastModified.Equal(currentMockApi.LastModified))
 }
+
 func ptr[A any](a A) *A {
 	return &a
 }
