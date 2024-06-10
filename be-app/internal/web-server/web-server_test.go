@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setup(t *testing.T) *WebServer {
+func setup(t *testing.T) (chan bool, *WebServer) {
 
 	// set folderPath
 	if err := os.Setenv("DYNA_MOCK_API_FOLDER", os.TempDir()); err != nil {
@@ -41,7 +41,7 @@ func setup(t *testing.T) *WebServer {
 	if err != nil {
 		t.Fatal(t, "error while registering the APIs of the the test web server")
 	}
-	return webServerTest
+	return closeCh, webServerTest
 }
 
 func dummyMockApi() mockapi.MockApi {
@@ -88,11 +88,16 @@ func writeDummyMockApiFile(t *testing.T) (*os.File, mockapi.MockApi) {
 func TestGetMockApi(t *testing.T) {
 
 	// setup server and mockApi mgmt
-	webServerTest := setup(t)
+	closeCh, webServerTest := setup(t)
 
 	// write dummy mock Api
 	_, mockApi := writeDummyMockApiFile(t)
-	defer removeMockApiFile(t, mockApi)
+	defer func() {
+		closeCh <- true
+		// wait
+		time.Sleep(50 * time.Millisecond)
+		removeMockApiFile(t, mockApi)
+	}()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
@@ -116,8 +121,8 @@ func TestGetMockApi(t *testing.T) {
 func TestGetMockApis(t *testing.T) {
 
 	// setup server and mockApi mgmt
-	webServerTest := setup(t)
-
+	closeCh, webServerTest := setup(t)
+	defer func() { closeCh <- true }()
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
@@ -129,6 +134,8 @@ func TestGetMockApis(t *testing.T) {
 	_, mockApi3 := writeDummyMockApiFile(t)
 
 	defer func() {
+		// wait
+		time.Sleep(50 * time.Millisecond)
 		removeMockApiFile(t, mockApi1)
 		removeMockApiFile(t, mockApi2)
 		removeMockApiFile(t, mockApi3)
@@ -157,7 +164,8 @@ func TestGetMockApis(t *testing.T) {
 func TestDeleteMockApis(t *testing.T) {
 
 	// setup server and mockApi mgmt
-	webServerTest := setup(t)
+	closeCh, webServerTest := setup(t)
+	defer func() { closeCh <- true }()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
@@ -168,6 +176,8 @@ func TestDeleteMockApis(t *testing.T) {
 	_, mockApi3 := writeDummyMockApiFile(t)
 
 	defer func() {
+		// wait
+		time.Sleep(50 * time.Millisecond)
 		removeMockApiFile(t, mockApi1)
 		removeMockApiFile(t, mockApi2)
 		removeMockApiFile(t, mockApi3)
@@ -191,7 +201,8 @@ func TestDeleteMockApis(t *testing.T) {
 func TestDeleteMockApi(t *testing.T) {
 
 	// setup server and mockApi mgmt
-	webServerTest := setup(t)
+	closeCh, webServerTest := setup(t)
+	defer func() { closeCh <- true }()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
@@ -202,6 +213,8 @@ func TestDeleteMockApi(t *testing.T) {
 	_, mockApi3 := writeDummyMockApiFile(t)
 
 	defer func() {
+		// wait
+		time.Sleep(50 * time.Millisecond)
 		removeMockApiFile(t, mockApi1)
 		removeMockApiFile(t, mockApi2)
 		removeMockApiFile(t, mockApi3)
@@ -225,7 +238,8 @@ func TestDeleteMockApi(t *testing.T) {
 func TestPostMockApi(t *testing.T) {
 
 	// setup server and mockApi mgmt
-	webServerTest := setup(t)
+	closeCh, webServerTest := setup(t)
+	defer func() { closeCh <- true }()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
@@ -252,6 +266,11 @@ func TestPostMockApi(t *testing.T) {
 	// check content of file
 	file, err := os.Stat(os.TempDir() + "/" + mockApiPost.Name + ".json")
 	assert.Nil(t, err)
+	defer func() {
+		// wait
+		time.Sleep(50 * time.Millisecond)
+		removeMockApiFile(t, mockApiPost)
+	}()
 
 	// retrieve mockApi just written in the temp file after the POST request
 	jsonFile, err := os.Open(os.TempDir() + "/" + file.Name())
@@ -283,7 +302,8 @@ func TestPostMockApi(t *testing.T) {
 
 func TestPatch(t *testing.T) {
 	// setup server and mockApi mgmt
-	webServerTest := setup(t)
+	closeCh, webServerTest := setup(t)
+	defer func() { closeCh <- true }()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
@@ -292,6 +312,8 @@ func TestPatch(t *testing.T) {
 	_, mockApi := writeDummyMockApiFile(t)
 
 	defer func() {
+		// wait
+		time.Sleep(50 * time.Millisecond)
 		removeMockApiFile(t, mockApi)
 	}()
 

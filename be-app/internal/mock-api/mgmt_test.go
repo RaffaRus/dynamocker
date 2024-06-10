@@ -386,7 +386,7 @@ func TestObserveFolder(t *testing.T) {
 	}
 
 	// attend for the modifications to be loaded by the observing gorutine
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// check the mock api has been modified
 	assert.Equal(t, 1, len(mockApiList))
@@ -431,7 +431,7 @@ func TestStopObserving(t *testing.T) {
 	go observeFolder(closeCh, &wg)
 	defer close(closeCh)
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// write proper mock api file
 	file, _ := writeDummyMockApiFile(t)
