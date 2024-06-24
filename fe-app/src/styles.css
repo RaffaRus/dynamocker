@@ -1,1 +1,11 @@
-/* You can add global styles to this file, and also import other style files */
+
+/* palette definition */
+:root {
+    --darkblue: #213F85;
+    --blue: #365194;
+    --brown: #C2AA7E;
+    --lightyellow: #F5F5DD;
+    --yellow: #F0EAD2;
+    --azzurro: #ADD8E8;
+    --fullwidth: 100%;
+  }
