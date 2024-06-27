@@ -69,7 +69,6 @@ func (ws WebServer) registerApis() error {
 	for _, api := range ws.apiList {
 		for method, handler := range api.handler {
 			ws.router.HandleFunc("/dynamocker/api/"+api.resource, handler).Methods(string(method))
-			// ws.router.Path("/dynamocker/api/" + api.resource).HandlerFunc(handler).Methods(string(method))
 		}
 	}
 	return nil

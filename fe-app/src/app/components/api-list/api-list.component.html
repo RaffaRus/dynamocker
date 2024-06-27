@@ -1,1 +1,4 @@
 <p>api-list works!</p>
+<div *ngFor="let item of apiList_">
+    <api-list-item (click)="onSelectedItem()" [mockApi]="item"></api-list-item>
+</div>

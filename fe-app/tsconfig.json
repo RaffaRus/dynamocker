@@ -9,6 +9,9 @@
         "@models/*": [
             "./src/app/models/*"
         ],
+        "@common/*": [
+            "./src/app/common/*"
+        ],
         "@services/*": [
             "./src/app/services/*"
         ]
