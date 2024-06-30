@@ -4,6 +4,7 @@
     font-family: 'Jaldi';
     font-size: 96px;
     text-align: center;
+    height: 162px;
 }
 
 .color-gradient {
@@ -14,7 +15,7 @@
     height: 3px;
     width: 100%;
     margin-bottom: 15px;
-    background-image: linear-gradient(to right,var(--lightyellow),var(--yellow),var(--brown),var(--darkblue),var(--blue),var(--azzurro));
+    background-image: linear-gradient(to right, var(--lightyellow), var(--yellow), var(--brown), var(--darkblue), var(--blue), var(--azzurro));
 }
 
 .left-wrapper {
@@ -23,10 +24,34 @@
     border: 2px solid;
     border-color: #f0ead2;
     border-radius: 19px;
-    /* TODO add the scrolling bar */
+    height: calc(100vh - 162px - 3px - 42px);
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-bottom: 10px;
+}
+
+.list {
+    overflow-y: scroll;
+    height: 100%;
 }
 
 .right-wrapper {
     width: 65%;
     float: right;
+    height: calc(100vh - 162px - 3px - 32px);
+}
+
+.list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.list::-webkit-scrollbar-track {
+    background-color: white;
+    border-radius: 100px;
+}
+
+.list::-webkit-scrollbar-thumb {
+    background-color: red;
+    border-radius: 100px;
+    overflow: hidden;
 }
