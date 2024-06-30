@@ -1,17 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { MockApi, dummyMockApi } from '@models/mockApi';
+import { IMockApi, dummyMockApi } from '@models/mockApi';
 import { MockApiService } from '@services/mockApiService';
 
 @Component({
   selector: 'app-editor',
-  standalone: true,
-  imports: [],
   templateUrl: './editor.component.html',
   styleUrl: './editor.component.css'
 })
 export class EditorComponent implements OnInit{
 
-  private selectedMockApi_ : MockApi = dummyMockApi
+  private selectedMockApi_ : IMockApi = dummyMockApi
 
   constructor(
     private mockApiService :  MockApiService
@@ -20,7 +18,7 @@ export class EditorComponent implements OnInit{
   ngOnInit(): void {
     
     this.mockApiService.newMockApiSelectedObservable().subscribe({
-      next: (mockApi : MockApi) => {
+      next: (mockApi : IMockApi) => {
         this.selectedMockApi_= mockApi
       },
       error: (err: Error) => {

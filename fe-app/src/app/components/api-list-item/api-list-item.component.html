@@ -1,25 +1,42 @@
-<div class="list-item" (click)="onClick()">
-
+<div class="list-item">
+    
+    <!-- Name -->
     <div class="row" style="display: flex;">
         <div class="column" style="margin-left: 10px;">
-            <p>
-                simple200response
-            </p>
+            <span style="line-height:50px; font-size: x-large;">
+                {{mockApi.Name}}
+            </span>
         </div>
         <div class="column" style="flex: content;width: fit-content;">
-            <div class="button-icon-wrapper" style="float: right;margin: 5px" (click)="deleteItem()">
+            <div class="button-icon-wrapper" style="float: right;margin: 5px" (click)="onDeleteItem()">
                 <div class="material-icons" style="color : #C2AA7E;">delete_outline</div>
+            </div>
+            <div class="button-icon-wrapper" style="float: right;margin: 5px" (click)="onSelectedItem()">
+                <div class="material-icons" style="color : #C2AA7E;">edit</div>
             </div>
         </div>
     </div>
+
+    <!-- URL -->
     <div class="row" style="margin-left: 20px;">
-        <p>
-            URL: `simple200response`
-        </p>
+        <span>
+            URL: {{mockApi.URL}}
+        </span>
     </div>
-    <div class="row" style="margin-left: 20px;">
-        <p>
-            METHODS: GET, POST, PATCH, DELETE
-        </p>
+
+    <!-- if there is at least a method -->
+    <div *ngIf="mockApiResponses().length > 0" style="margin-left: 20px;">
+        <span> METHODS: </span>
+        <span style="margin-left: 10px;">
+            <ng-container>
+                <button class="method-button" *ngFor="let resp of mockApiResponses()">{{resp}}</button>
+            </ng-container>
+        </span>
     </div>
+
+    <!-- if there is no method -->
+    <ng-template #noMethods>
+        No methods defined.
+    </ng-template>
+
 </div>

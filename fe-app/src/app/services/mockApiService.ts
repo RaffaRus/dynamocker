@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { MockApi, dummyMockApi } from "@models/mockApi";
+import { IMockApi, dummyMockApi } from "@models/mockApi";
 import { BehaviorSubject, Observable } from "rxjs";
 
 @Injectable()
@@ -10,17 +10,18 @@ export class MockApiService {
     private MOCK_APIS = '/mock-apis'; 
     private MOCK_API = '/mock-apis';
     
-    private newMockApiSub : BehaviorSubject<MockApi> = new BehaviorSubject<MockApi>(dummyMockApi)
+    private newMockApiSub : BehaviorSubject<IMockApi> = new BehaviorSubject<IMockApi>(dummyMockApi)
     private refreshListSub : BehaviorSubject<null> = new BehaviorSubject<null>(null)
 
     constructor(private httpClient: HttpClient) { }
 
-    newMockApiSelectedObservable() : Observable<MockApi> {
+    newMockApiSelectedObservable() : Observable<IMockApi> {
         return this.newMockApiSub.asObservable()
     }
 
-    selectMockApi(mockApi : MockApi) {
+    selectMockApi(mockApi : IMockApi) {
         this.newMockApiSub.next(mockApi)
+        console.log("item selected")
     }
 
     refreshListObservable() {
@@ -31,9 +32,9 @@ export class MockApiService {
         this.refreshListSub.next(null)
     }
 
-    getAllMockApis() : Observable<MockApi[] > {
+    getAllMockApis() : Observable<IMockApi[] > {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_APIS
-        return this.httpClient.get<MockApi[] >(url)
+        return this.httpClient.get<IMockApi[] >(url)
     }
 
     deleteAllMockApis(mockApiName : string) : Observable<null > {
@@ -41,17 +42,17 @@ export class MockApiService {
         return this.httpClient.delete<null >(url)
     }
 
-    getMockApi(mockApiName : string) : Observable<MockApi > {
+    getMockApi(mockApiName : string) : Observable<IMockApi > {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + mockApiName
-        return this.httpClient.get<MockApi >(url)
+        return this.httpClient.get<IMockApi >(url)
     }
     
-    postMockApi(mockApi : MockApi) : Observable<null > {
+    postMockApi(mockApi : IMockApi) : Observable<null > {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API
         return this.httpClient.post<null >(url, JSON.stringify(mockApi))
     }
     
-    patchMockApi(mockApi : MockApi) : Observable<null > {
+    patchMockApi(mockApi : IMockApi) : Observable<null > {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API
         return this.httpClient.patch<null >(url, JSON.stringify(mockApi))
     }

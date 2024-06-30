@@ -1,7 +1,7 @@
 export function isDefined<Type>(elem : Type) : boolean {
     if (elem !== null && elem !== undefined) {
-       return false
+       return true
     } else {
-       return true 
+       return false 
     }
 }

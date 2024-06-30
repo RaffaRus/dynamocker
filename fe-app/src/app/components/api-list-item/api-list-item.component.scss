@@ -1,22 +1,37 @@
 .list-item {
-    position: relative;
-    width: 360px;
-    height: fit-content;
-    background-color: #f5f5dd;
-    border-radius: 19px;
-    overflow: hidden;
-    border: 2px solid;
-    border-color: #f0ead2;
-  }
-  
-  .button-icon-wrapper {
-    border-radius: 50%;
-    border-style: solid;
-    border-width: 3px;
-    border-color:  #C2AA7E;
-    background-color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
+  position: relative;
+  width: 90%;
+  height: fit-content;
+  background-color: #f5f5dd;
+  border-radius: 19px;
+  overflow: hidden;
+  border: 2px solid;
+  border-color: #f0ead2;
+  margin: 4%;
+  padding-bottom: 5px;
+}
+
+.button-icon-wrapper {
+  border-radius: 50%;
+  border-style: solid;
+  border-width: 3px;
+  border-color: #C2AA7E;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.method-button {
+  background-color: var(--azzurro);
+  border-color: var(--darkblue);
+  color: var(--blue);
+  padding: 8px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 2px 1px;
+  border-radius: 12px;
+}

@@ -1,25 +1,49 @@
 // General
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, setTestabilityGetter } from '@angular/core';
 
 // Model
-import { MockApi } from '@models/mockApi';
+import { IMockApi } from '@models/mockApi';
 
 // Service
 import { MockApiService } from '@services/mockApiService';
-import { isDefined } from '@common/common';
 
 @Component({
   selector: 'app-api-list',
-  standalone: true,
-  imports: [],
   templateUrl: './api-list.component.html',
   styleUrl: './api-list.component.css'
 })
 
 export class ApiListComponent implements OnInit{ 
 
+  startingMockApiList : IMockApi[] = [
+    {
+      Added: new Date(),
+      LastModified: new Date(),
+      Name: "lol1",
+      URL: "url",
+      Responses : {
+        Delete: JSON.parse("{\"delete1\":\"delete1\"}"),
+        Get: JSON.parse("{\"get1\":\"get1\"}"),
+        Post: JSON.parse("{\"post1\":\"post1\"}"),
+        Patch: JSON.parse("{\"patch1\":\"patch1\"}"),
+      },
+    },
+    {
+      Added: new Date(),
+      LastModified: new Date(),
+      Name: "lol2",
+      URL: "ur2",
+      Responses : {
+        Delete: JSON.parse("{\"delete2\":\"delete2\"}"),
+        Get: JSON.parse("{\"get2\":\"get2\"}"),
+        Post: JSON.parse("{\"post2\":\"post2\"}"),
+        Patch: JSON.parse("{\"patch2\":\"patch2\"}"),
+      },
+    },
+  ]
+
   // list of mock apis
-  apiList_: MockApi[] = []
+  apiList_: IMockApi[] = this.startingMockApiList
 
   constructor(
     private mockApiService : MockApiService
@@ -28,14 +52,14 @@ export class ApiListComponent implements OnInit{
   ngOnInit(): void {
 
     // get the mock apis for the first time
-    this.mockApiService.getAllMockApis().subscribe({
-      next: (value) => {
-        this.apiList_ = value
-      },
-      error: (err) => {
-        console.error(err)
-      }
-    })
+    // this.mockApiService.getAllMockApis().subscribe({
+    //   next: (value) => {
+    //     this.apiList_ = value
+    //   },
+    //   error: (err) => {
+    //     console.error(err)
+    //   }
+    // })
 
     // subscribe to the refresh list observable
     this.mockApiService.refreshListObservable().subscribe({

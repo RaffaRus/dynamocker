@@ -1,4 +1,7 @@
-<p>api-list works!</p>
 <div *ngFor="let item of apiList_">
-    <api-list-item (click)="onSelectedItem()" [mockApi]="item"></api-list-item>
+    <app-api-list-item [mockApi]=item></app-api-list-item>
+</div>
+
+<div class="panel" style="text-align: center;">
+    <div class="material-icons">add_circle_outline</div>
 </div>

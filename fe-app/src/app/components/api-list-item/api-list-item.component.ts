@@ -1,20 +1,16 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { MockApi, dummyMockApi } from '@models/mockApi';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { isDefined } from '@common/common';
+import { IMockApi, dummyMockApi } from '@models/mockApi';
 import { MockApiService } from '@services/mockApiService';
-import { Observable, Subscription } from 'rxjs';
-import { subscriptionLogsToBeFn } from 'rxjs/internal/testing/TestScheduler';
 
 @Component({
   selector: 'app-api-list-item',
-  standalone: true,
   templateUrl: './api-list-item.component.html',
   styleUrl: './api-list-item.component.scss'
 })
 export class ApiListItemComponent implements OnInit{
   @Output() click = new EventEmitter<string>()
-
-  private mockApi_ : MockApi = dummyMockApi
+  @Input() mockApi : IMockApi = dummyMockApi
 
   constructor(
     private mockApiService : MockApiService
@@ -22,20 +18,30 @@ export class ApiListItemComponent implements OnInit{
 
   ngOnInit(): void {
     // check that the mockApi has been correctly filled with Input value
-    if (this.mockApi_ === dummyMockApi) {
+    if (this.mockApi === dummyMockApi) {
       console.error("mock Api not correctly passed in from the parent component");
     }
 
   }
 
-  onClick(){
-    this.mockApiService.selectMockApi(this.mockApi_)
+  onSelectedItem(){
+    this.mockApiService.selectMockApi(this.mockApi)
   }
   
+  mockApiResponses(): string[] {
+    // create the array first, then remove items if they are not defined in the mock api
+    let responses : string[] = ["GET","POST","PATCH","DELETE"]
+    if (!isDefined(this.mockApi.Responses.Get)) {delete responses[responses.findIndex((name: string) => {return name==="Get"})]}
+    if (!isDefined(this.mockApi.Responses.Post)) {delete responses[responses.findIndex((name: string) => {return name==="Post"})]}
+    if (!isDefined(this.mockApi.Responses.Patch)) {delete responses[responses.findIndex((name: string) => {return name==="Patch"})]}
+    if (!isDefined(this.mockApi.Responses.Delete)) {delete responses[responses.findIndex((name: string) => {return name==="Delete"})]}
+    return responses
+  }
+
   public onDeleteItem() {
     console.log("item removed")
     // delete mock api from the back end
-    this.mockApiService.deleteAllMockApis(this.mockApi_.Name).subscribe({
+    this.mockApiService.deleteAllMockApis(this.mockApi.Name).subscribe({
       next: (value) => {
         console.log(value)
         // emit the requirement to refresh list
