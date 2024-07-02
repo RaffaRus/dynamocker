@@ -11,4 +11,13 @@
     border-radius: 8px;
     float: right;
     margin: 10px;
+    background-color: var(--azzurro);
+    border-color: var(--darkblue);
+    color: var(--blue);
+    padding: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    margin: 2px 1px;
+    border-radius: 12px;
 }

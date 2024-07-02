@@ -21,6 +21,7 @@ import { TreeComponent } from '@components/tree/tree.component';
 
 // Services
 import { MockApiService } from '@services/mockApiService';
+import { MonacoEditorService } from '@services/monacoEditorService';
 
 
 @NgModule({
@@ -47,7 +48,8 @@ import { MockApiService } from '@services/mockApiService';
   ],
   providers: [
     MockApiService,
-    HttpClient
+    HttpClient,
+    MonacoEditorService
   ]
 })
 export class AppModule { }
