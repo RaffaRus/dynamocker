@@ -64,6 +64,54 @@ export class ApiListComponent implements OnInit{
         Patch: JSON.parse("{\"patch2\":\"patch2\"}"),
       },
     },
+    {
+      Added: new Date(),
+      LastModified: new Date(),
+      Name: "lol2",
+      URL: "ur2",
+      Responses : {
+        Delete: JSON.parse("{\"delete2\":\"delete2\"}"),
+        Get: JSON.parse("{\"get2\":\"get2\"}"),
+        Post: JSON.parse("{\"post2\":\"post2\"}"),
+        Patch: JSON.parse("{\"patch2\":\"patch2\"}"),
+      },
+    },
+    {
+      Added: new Date(),
+      LastModified: new Date(),
+      Name: "lol2",
+      URL: "ur2",
+      Responses : {
+        Delete: JSON.parse("{\"delete2\":\"delete2\"}"),
+        Get: JSON.parse("{\"get2\":\"get2\"}"),
+        Post: JSON.parse("{\"post2\":\"post2\"}"),
+        Patch: JSON.parse("{\"patch2\":\"patch2\"}"),
+      },
+    },
+    {
+      Added: new Date(),
+      LastModified: new Date(),
+      Name: "lol2",
+      URL: "ur2",
+      Responses : {
+        Delete: JSON.parse("{\"delete2\":\"delete2\"}"),
+        Get: JSON.parse("{\"get2\":\"get2\"}"),
+        Post: JSON.parse("{\"post2\":\"post2\"}"),
+        Patch: JSON.parse("{\"patch2\":\"patch2\"}"),
+      },
+    },
+    {
+      Added: new Date(),
+      LastModified: new Date(),
+      Name: "lol2",
+      URL: "ur2",
+      Responses : {
+        Delete: JSON.parse("{\"delete2\":\"delete2\"}"),
+        Get: JSON.parse("{\"get2\":\"get2\"}"),
+        Post: JSON.parse("{\"post2\":\"post2\"}"),
+        Patch: JSON.parse("{\"patch2\":\"patch2\"}"),
+      },
+    },
   ]
 
   // list of mock apis

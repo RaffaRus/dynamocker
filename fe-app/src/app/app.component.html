@@ -4,17 +4,13 @@
 <div class="h-line"></div>
 
 <ng-container>
-    <div class="row">
+    <div class="row" style="display: flex;flex-direction: row;">
 
-        <div class="column left-wrapper">
-            <div class="list">
-                <app-api-list></app-api-list>
-            </div>
-        </div>
+        <app-tree style="width: calc(100% - 66% - 7px);"></app-tree>
 
-        <div class="column right-wrapper">
-            <app-editor></app-editor>
-        </div>
+        <div style="width: 14px;"></div>
+
+        <app-editor style="width: calc(100% - 33% - 7px);"></app-editor>
 
     </div>
 </ng-container>

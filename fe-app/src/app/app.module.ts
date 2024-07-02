@@ -17,6 +17,7 @@ import { ApiListComponent } from '@components/api-list/api-list.component';
 import { ApiListItemComponent } from '@components/api-list-item/api-list-item.component';
 import { BackgroundComponent } from '@components/background/background.component';
 import { EditorComponent } from '@components/editor/editor.component';
+import { TreeComponent } from '@components/tree/tree.component';
 
 // Services
 import { MockApiService } from '@services/mockApiService';
@@ -28,7 +29,8 @@ import { MockApiService } from '@services/mockApiService';
     BackgroundComponent, 
     ApiListComponent,
     ApiListItemComponent,
-    EditorComponent
+    EditorComponent,
+    TreeComponent
   ],
   imports: [ 
     BrowserModule, 

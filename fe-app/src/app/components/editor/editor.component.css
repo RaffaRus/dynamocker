@@ -1,0 +1,14 @@
+.right-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+    height: calc(100vh - 162px - 3px - 42px);
+    border: 2px solid;
+    border-color: #f0ead2;
+    border-radius: 19px;
+}
+
+.save-button {
+    border-radius: 8px;
+    float: right;
+    margin: 10px;
+}
