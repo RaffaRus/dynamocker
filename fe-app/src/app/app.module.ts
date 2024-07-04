@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 // Material
 import {MatIconModule} from '@angular/material/icon';
@@ -24,33 +24,27 @@ import { MockApiService } from '@services/mockApiService';
 import { MonacoEditorService } from '@services/monacoEditorService';
 
 
-@NgModule({
-  declarations: [ 
-    AppComponent, 
-    BackgroundComponent, 
-    ApiListComponent,
-    ApiListItemComponent,
-    EditorComponent,
-    TreeComponent
-  ],
-  imports: [ 
-    BrowserModule, 
-    FormsModule, 
-    MatIconModule, 
-    MatDividerModule,
-    MatBadgeModule, 
-    MatButtonModule,
-    CommonModule,
-    HttpClientModule
-  ],
-  bootstrap:    [ 
-    AppComponent 
-  ],
-  providers: [
-    MockApiService,
-    HttpClient,
-    MonacoEditorService
-  ]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        BackgroundComponent,
+        ApiListComponent,
+        ApiListItemComponent,
+        EditorComponent,
+        TreeComponent
+    ],
+    bootstrap: [
+        AppComponent
+    ], imports: [BrowserModule,
+        FormsModule,
+        MatIconModule,
+        MatDividerModule,
+        MatBadgeModule,
+        MatButtonModule,
+        CommonModule], providers: [
+        MockApiService,
+        HttpClient,
+        MonacoEditorService,
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule { }
 
