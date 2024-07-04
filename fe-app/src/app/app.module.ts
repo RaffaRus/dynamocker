@@ -21,7 +21,6 @@ import { TreeComponent } from '@components/tree/tree.component';
 
 // Services
 import { MockApiService } from '@services/mockApiService';
-import { MonacoEditorService } from '@services/monacoEditorService';
 
 
 @NgModule({ declarations: [
@@ -43,7 +42,6 @@ import { MonacoEditorService } from '@services/monacoEditorService';
         CommonModule], providers: [
         MockApiService,
         HttpClient,
-        MonacoEditorService,
         provideHttpClient(withInterceptorsFromDi())
     ] })
 export class AppModule { }

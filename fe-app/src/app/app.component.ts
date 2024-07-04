@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { MonacoEditorService } from '@services/monacoEditorService';
 
 @Component({
   selector: 'app-root',
@@ -10,9 +9,4 @@ import { MonacoEditorService } from '@services/monacoEditorService';
 export class AppComponent {
   title = 'dynamocker';
 
-  constructor(
-    private monacoEditorService : MonacoEditorService
-  ){
-    monacoEditorService.load()
-  }
 }
