@@ -11,11 +11,14 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular-builders/custom-webpack:browser",
           "options": {
-            "outputPath": "dist/dynamocker",
+            "customWebpackConfig": {
+              "path": "./webpack.config.ts"
+            },
+            "main": "src/main.ts",
             "index": "src/index.html",
-            "browser": "src/main.ts",
+            "outputPath": "dist/dynamocker",
             "polyfills": [
               "zone.js"
             ],
@@ -25,7 +28,8 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.css"
+              "node_modules/monaco-editor/min/vs/editor/editor.main.css",
+              "src/styles.scss"
             ],
             "scripts": []
           },
@@ -54,7 +58,10 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular-builders/custom-webpack:dev-server",
+          "options": {
+            "buildTarget": "dynamocker:build:development"
+          },
           "configurations": {
             "production": {
               "buildTarget": "dynamocker:build:production"
@@ -66,13 +73,13 @@
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "builder": "@angular-builders/custom-webpack:extract-i18n",
           "options": {
             "buildTarget": "dynamocker:build"
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
+          "builder": "@angular-builders/custom-webpack:karma",
           "options": {
             "polyfills": [
               "zone.js",
@@ -84,7 +91,7 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.scss"
             ],
             "scripts": []
           }

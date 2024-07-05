@@ -10,7 +10,7 @@ import { MockApiService } from '@services/mockApiService';
 @Component({
   selector: 'app-api-list',
   templateUrl: './api-list.component.html',
-  styleUrl: './api-list.component.css'
+  styleUrl: './api-list.component.scss'
 })
 
 export class ApiListComponent implements OnInit{ 

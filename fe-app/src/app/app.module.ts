@@ -22,8 +22,8 @@ import { TreeComponent } from '@components/tree/tree.component';
 // Services
 import { MockApiService } from '@services/mockApiService';
 
-
-@NgModule({ declarations: [
+@NgModule({ 
+    declarations: [
         AppComponent,
         BackgroundComponent,
         ApiListComponent,
@@ -33,16 +33,20 @@ import { MockApiService } from '@services/mockApiService';
     ],
     bootstrap: [
         AppComponent
-    ], imports: [BrowserModule,
+    ], 
+    imports: [BrowserModule,
         FormsModule,
         MatIconModule,
         MatDividerModule,
         MatBadgeModule,
         MatButtonModule,
-        CommonModule], providers: [
+        CommonModule
+    ], 
+    providers: [
         MockApiService,
         HttpClient,
         provideHttpClient(withInterceptorsFromDi())
     ] })
+
 export class AppModule { }
 
