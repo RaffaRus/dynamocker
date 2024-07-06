@@ -25,6 +25,8 @@ export class ApiListItemComponent implements OnInit{
   }
 
   onSelectedItem(){
+    // check that the mockApi in the editor is saved, otherwise raise notitfication
+
     this.mockApiService.selectMockApi(this.mockApi)
   }
   

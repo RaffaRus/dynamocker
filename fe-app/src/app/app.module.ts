@@ -18,11 +18,14 @@ import { ApiListItemComponent } from '@components/api-list-item/api-list-item.co
 import { BackgroundComponent } from '@components/background/background.component';
 import { EditorComponent } from '@components/editor/editor.component';
 import { TreeComponent } from '@components/tree/tree.component';
+import { jqxButtonModule } from 'jqwidgets-ng/jqxbuttons';
+import { jqxNotificationModule } from 'jqwidgets-ng/jqxnotification';
 
 // Services
 import { MockApiService } from '@services/mockApiService';
+import { EditorService } from '@services/editor';
 
-@NgModule({ 
+@NgModule({
     declarations: [
         AppComponent,
         BackgroundComponent,
@@ -33,17 +36,21 @@ import { MockApiService } from '@services/mockApiService';
     ],
     bootstrap: [
         AppComponent
-    ], 
-    imports: [BrowserModule,
+    ],
+    imports: [
+        BrowserModule,
         FormsModule,
         MatIconModule,
         MatDividerModule,
         MatBadgeModule,
         MatButtonModule,
-        CommonModule
-    ], 
+        CommonModule,
+        jqxNotificationModule,
+        jqxButtonModule
+    ],
     providers: [
         MockApiService,
+        EditorService,
         HttpClient,
         provideHttpClient(withInterceptorsFromDi())
     ] })

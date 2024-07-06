@@ -21,6 +21,7 @@
     "@angular/platform-browser-dynamic": "^18.0.6",
     "@angular/router": "^18.0.6",
     "css-loader": "^7.1.2",
+    "jqwidgets-ng": "^19.2.2",
     "monaco-editor": "^0.50.0",
     "monaco-editor-webpack-plugin": "^7.1.0",
     "rxjs": "~7.8.0",

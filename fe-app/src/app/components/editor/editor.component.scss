@@ -1,5 +1,5 @@
 .right-wrapper {
-    width: 100%;
+    width: 100%;;
     box-sizing: border-box;
     height: calc(100vh - 162px - 3px - 42px);
     border: 2px solid;
@@ -8,21 +8,28 @@
 }
 
 .save-button {
-    border-radius: 8px;
     float: right;
-    margin: 10px;
+    margin: 8px;
     background-color: var(--azzurro);
     border-color: var(--darkblue);
     color: var(--blue);
-    padding: 8px;
     text-align: center;
     text-decoration: none;
-    font-size: 14px;
-    margin: 2px 25px;
+    font-size: 18px;
+    margin-right: 25px;
     border-radius: 12px;
+    border: 2px solid;
+    padding-right: 5px;
+    padding-left: 5px;
+    cursor: pointer;
 }
 
 .monaco {
-    height:95%; 
+    height: 94%;
     margin: 5px;
+    position: relative;
+}
+
+.notification {
+    width: 80%;
 }

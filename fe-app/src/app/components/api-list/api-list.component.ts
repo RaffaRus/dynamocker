@@ -115,7 +115,7 @@ export class ApiListComponent implements OnInit{
   ]
 
   // list of mock apis
-  apiList_: IMockApi[] = this.startingMockApiList
+  _apiList: IMockApi[] = this.startingMockApiList
 
   constructor(
     private mockApiService : MockApiService
@@ -126,7 +126,7 @@ export class ApiListComponent implements OnInit{
     // get the mock apis for the first time
     // this.mockApiService.getAllMockApis().subscribe({
     //   next: (value) => {
-    //     this.apiList_ = value
+    //     this._apiList = value
     //   },
     //   error: (err) => {
     //     console.error(err)
@@ -139,7 +139,7 @@ export class ApiListComponent implements OnInit{
         // if a new event has been emitted, then get againg the mock api list
         this.mockApiService.getAllMockApis().subscribe({
           next: (value) => {
-            this.apiList_ = value
+            this._apiList = value
           },
           error: (err) => {
             console.error(err)
