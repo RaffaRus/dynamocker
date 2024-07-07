@@ -33,3 +33,17 @@
 .notification {
     width: 80%;
 }
+
+.info {
+    color: var(--azzurro);
+}
+
+.warning {
+    color: yellow;
+    font-weight: bold;
+}
+
+.error {
+    color: red;
+    font-weight: bold;
+}

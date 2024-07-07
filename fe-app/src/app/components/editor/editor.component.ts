@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { IMockApi, dummyMockApi } from '@models/mockApi';
-import { initialMockApiJson } from '@models/monaco';
+import { initialMockApiJson, notificationLevel } from '@models/monaco';
 import { EditorService } from '@services/editor';
 import { MockApiService } from '@services/mockApiService';
 import { jqxNotificationComponent } from 'jqwidgets-ng/jqxnotification';
@@ -15,25 +15,11 @@ export class EditorComponent implements OnInit {
   @ViewChild('monacoDivTag', { static: true }) _editorContainer!: ElementRef;
   @ViewChild('jqxNotification', { static: false }) jqxNotification!: jqxNotificationComponent;
   
-  quotes: string[] =
-  [
-      'I\'m gonna make him an offer he can\'t refuse.', 'Toto, I\'ve got a feeling we\'re not in Kansas anymore.',
-      'You talkin\' to me?', 'Bond. James Bond.', 'I\'ll be back.', 'Round up the usual suspects.',
-      'I\'m the king of the world!', 'A martini. Shaken, not stirred.',
-      'May the Force be with you.',
-      'Well, nobody\'s perfect.'
-  ];
-  notificationClick(): void {
-      this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = this.quotes[Math.round(Math.random() * this.quotes.length - 1)];
-      this.jqxNotification.open();
-  };
-
-
-  codeEditorInstance!: monaco.editor.IStandaloneCodeEditor;
+  public codeEditorInstance!: monaco.editor.IStandaloneCodeEditor;
+  public isSaveButtonEnabled : boolean = false
 
   private _selectedMockApi: IMockApi = dummyMockApi
   private _isSelectedMockApiNew: boolean = true
-  private _unsavedModifications : boolean = false
 
   constructor(
     private mockApiService: MockApiService,
@@ -44,6 +30,8 @@ export class EditorComponent implements OnInit {
 
   ngOnInit(): void {
 
+    // disable save button at startup
+    this.isSaveButtonEnabled = false
 
     // create monaco editor
     this.codeEditorInstance = monaco.editor.create(this._editorContainer.nativeElement, {
@@ -51,27 +39,16 @@ export class EditorComponent implements OnInit {
       wordWrap: 'on',
       wrappingIndent: 'indent',
       language: 'json',
-      // minimap: { enabled: false },
+      minimap: { enabled: false },
       automaticLayout: true,
       value: initialMockApiJson
     });
-
-    // subscribe to modifications of the json in the monaco editor
-    // this.editorService.unsavedModifications().subscribe({
-    //   next: (unsaved : boolean) => {
-    //     this._unsavedModifications = unsaved
-    //   },
-    //   error: (err: Error) => {
-    //     console.error("received error from unsavedModifications subscription: ", err)
-    //   }
-    // })
 
     // subscribe to "new_mock_api_selected"
     this.mockApiService.newMockApiSelectedObservable().subscribe({
       next: (mockApi: IMockApi) => {
         this._selectedMockApi = mockApi
         this._isSelectedMockApiNew = false
-        this._unsavedModifications = false
       },
       error: (err: Error) => {
         console.error("received error from newMockApiSelectedObservable subscription: ", err)
@@ -80,10 +57,21 @@ export class EditorComponent implements OnInit {
 
     // set the editor property 'unsavedModifications' as true
     if (this.codeEditorInstance.getModel() != null) {
-      let model = this.codeEditorInstance.getModel() as monaco.editor.ITextModel
-      model.onDidChangeContent((event) => {
+      this.codeEditorInstance.getModel()!.onDidChangeContent((event) => {
         this.editorService.unsavedModifications = true
       });
+    }
+    
+    // enable/diable save button based on the json validation schema
+    if (this.codeEditorInstance.getModel() != null) {
+      monaco.editor.onDidChangeMarkers( event => {
+        // enable save button only if there is no error in the JSON
+        if (monaco.editor.getModelMarkers({}).length === 0) {
+          this.isSaveButtonEnabled = true
+        } else {
+          this.isSaveButtonEnabled = false
+        }
+      })
     }
   }
 
@@ -136,39 +124,41 @@ export class EditorComponent implements OnInit {
   onSave() {
     if (this._isSelectedMockApiNew) {
       this.mockApiService.postMockApi(this._selectedMockApi).pipe().subscribe({
-        next: (asd) => {
-
-        },
-        error: (err) => {
-          console.log(err)
-
+        error: (err : Error) => {
+          console.log("Could not create new MockApi: "+err)
+          this.notify("Could not create new MockApi: "+ err.message, notificationLevel.error)
 
         },
         complete: () => {
+          const msg = "MockApi succesfully created"
+          this.notify(msg, notificationLevel.info)
           this.editorService.unsavedModifications = false
           this.mockApiService.refreshList()
         }
-        
       }
       )
     } else {
       this.mockApiService.patchMockApi(this._selectedMockApi).pipe().subscribe({
-        next: (asd) => {
-
-        },
-        error: (err) => {
-          console.log(err)
-          // notification(err)
+        error: (err : Error) => {
+          console.log("Could not modify new MockApi: "+ err.message)
+          this.notify("Could not modify new MockApi: "+ err.message, notificationLevel.error)
 
         },
         complete: () => {
+          const msg = "MockAPi succesfullly modified"
+          this.notify(msg, notificationLevel.info)
           this.editorService.unsavedModifications = false
           this.mockApiService.refreshList()
         }
-        
       }
       )
 
     }
   }
+  
+  notify(msg: string, level: notificationLevel): void {
+    this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = msg;
+    this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer').classList.add(level)
+    this.jqxNotification.open();
+};
 }

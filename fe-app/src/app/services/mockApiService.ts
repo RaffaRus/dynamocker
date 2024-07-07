@@ -6,7 +6,7 @@ import { BehaviorSubject, Observable } from "rxjs";
 @Injectable()
 export class MockApiService {
     
-    private MOCK_API_SERVE_URL_BASE = 'http://localhost:<PORT>/dynamocker/api'; 
+    private MOCK_API_SERVE_URL_BASE = 'http://localhost:8150/dynamocker/api'; 
     private MOCK_APIS = '/mock-apis'; 
     private MOCK_API = '/mock-apis';
     
@@ -37,9 +37,9 @@ export class MockApiService {
         return this.httpClient.get<IMockApi[] >(url)
     }
 
-    deleteAllMockApis(mockApiName : string) : Observable<null > {
+    deleteAllMockApis(mockApiName : string) : Observable<null> {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + mockApiName
-        return this.httpClient.delete<null >(url)
+        return this.httpClient.delete<null>(url)
     }
 
     getMockApi(mockApiName : string) : Observable<IMockApi > {
@@ -47,14 +47,14 @@ export class MockApiService {
         return this.httpClient.get<IMockApi >(url)
     }
     
-    postMockApi(mockApi : IMockApi) : Observable<null > {
+    postMockApi(mockApi : IMockApi) : Observable<null> {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API
-        return this.httpClient.post<null >(url, JSON.stringify(mockApi))
+        return this.httpClient.post<null>(url, JSON.stringify(mockApi))
     }
     
-    patchMockApi(mockApi : IMockApi) : Observable<null > {
+    patchMockApi(mockApi : IMockApi) : Observable<null> {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API
-        return this.httpClient.patch<null >(url, JSON.stringify(mockApi))
+        return this.httpClient.patch<null>(url, JSON.stringify(mockApi))
     }
 
 }
