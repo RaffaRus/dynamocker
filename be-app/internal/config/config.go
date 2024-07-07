@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -30,7 +29,6 @@ var envVarList map[string]string = map[string]string{
 // read all the env variables
 func ReadVars() {
 
-	fmt.Println("from function", envVarList)
 	for env := range envVarList {
 		log.Debugf("looking for the key %s\n", env)
 		if val := os.Getenv(env); val != "" {

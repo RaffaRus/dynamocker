@@ -30,6 +30,9 @@ func NewServer() (*WebServer, error) {
 	// setup logger for the server
 	ws.router.Use(loggingMiddleware)
 
+	// add common Headers to all the responses
+	ws.router.Use(headersMiddleware)
+
 	// load handlers
 	ws.apiList = ws.getHandlers()
 
@@ -79,6 +82,16 @@ func (ws WebServer) registerApis() error {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.RequestURI)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// middleware used to add common headers to all the requests
+func headersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
 		next.ServeHTTP(w, r)
 	})
 }

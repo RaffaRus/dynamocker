@@ -4,7 +4,6 @@ import (
 	"dynamocker/internal/config"
 	mockapi "dynamocker/internal/mock-api"
 	webserver "dynamocker/internal/web-server"
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,7 +16,7 @@ import (
 // TODO: complete Tests
 
 func main() {
-	fmt.Print("Hello there, this is DynaMocker")
+	log.Info("Hello there, this is DynaMocker")
 
 	closeCh := make(chan bool)
 	var wg sync.WaitGroup
