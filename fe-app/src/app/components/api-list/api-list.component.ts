@@ -1,8 +1,9 @@
 // General
-import { Component, OnInit, setTestabilityGetter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 // Model
-import { IMockApi } from '@models/mockApi';
+import { IMockApi } from '@models/mockApi.model';
+import { initialMockApiJson } from '@models/editor.model';
 
 // Service
 import { MockApiService } from '@services/mockApiService';
@@ -115,7 +116,7 @@ export class ApiListComponent implements OnInit{
   ]
 
   // list of mock apis
-  _apiList: IMockApi[] = this.startingMockApiList
+  _apiList: IMockApi[] = []
 
   constructor(
     private mockApiService : MockApiService
@@ -155,7 +156,10 @@ export class ApiListComponent implements OnInit{
 
   // new Item
   newItem() {
+    // TODO: add notification with confirmation if smt in the editor is modified and not saved
     // create an empty element, add it to the list and open it in the editor
+    let newMockApiModel = initialMockApiJson
+    this.mockApiService.selectMockApi(newMockApiModel)
   }
 
 }

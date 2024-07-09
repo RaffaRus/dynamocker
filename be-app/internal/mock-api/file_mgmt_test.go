@@ -19,7 +19,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	folderPath = os.TempDir()
 
 	// add valid mock api
-	api := dummyMockApi()
+	api := dummyMockApi(t)
 	defer func() {
 		filename := api.FilePath + "/" + api.Name
 		_, err := os.Stat(filename)
@@ -40,7 +40,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", []byte("invalid json")), "error while unmarshaling body: invalid character 'i' looking for beginning of value")
 
 	// add struct with no Name
-	invalidStruct := dummyMockApi()
+	invalidStruct := dummyMockApi(t)
 	invalidStruct.Name = string("")
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -49,7 +49,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Name' Error:Field validation for 'Name' failed on the 'required' tag")
 
 	// add struct with no URL
-	invalidStruct = dummyMockApi()
+	invalidStruct = dummyMockApi(t)
 	invalidStruct.URL = string("")
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.URL' Error:Field validation for 'URL' failed on the 'required' tag")
 
 	// add struct with no FilePath
-	invalidStruct = dummyMockApi()
+	invalidStruct = dummyMockApi(t)
 	invalidStruct.FilePath = ""
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -67,7 +67,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.FilePath' Error:Field validation for 'FilePath' failed on the 'dir' tag")
 
 	// add struct with invalid FilePath
-	invalidStruct = dummyMockApi()
+	invalidStruct = dummyMockApi(t)
 	invalidStruct.FilePath = "not a directory path"
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.FilePath' Error:Field validation for 'FilePath' failed on the 'dir' tag")
 
 	// add struct with no Added
-	invalidStruct = dummyMockApi()
+	invalidStruct = dummyMockApi(t)
 	invalidStruct.Added = time.Time{}
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -85,7 +85,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Added' Error:Field validation for 'Added' failed on the 'required' tag")
 
 	// add struct with no Last Modified
-	invalidStruct = dummyMockApi()
+	invalidStruct = dummyMockApi(t)
 	invalidStruct.LastModified = time.Time{}
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -94,7 +94,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.LastModified' Error:Field validation for 'LastModified' failed on the 'required' tag")
 
 	// add struct with no Response
-	invalidStruct = dummyMockApi()
+	invalidStruct = dummyMockApi(t)
 	invalidStruct.Responses = Response{}
 	bytes, err = json.Marshal(invalidStruct)
 	if err != nil {
@@ -142,7 +142,7 @@ func TestModifyMockApiFile(t *testing.T) {
 
 	// add mock api
 	folderPath = os.TempDir()
-	api := dummyMockApi()
+	api := dummyMockApi(t)
 	defer func() {
 		filename := api.FilePath + "/" + api.Name + ".json"
 		_, err := os.Stat(filename)
@@ -166,10 +166,18 @@ func TestModifyMockApiFile(t *testing.T) {
 		t.Fatalf("errror while unmarshaling : %s", err)
 	}
 	newApi.LastModified = time.Now()
-	newApi.Responses.Get = ptr(`{"new_json":true,"new_body":"a new response"}`)
-	newApi.Responses.Patch = ptr(`{"this_is":4}`)
-	newApi.Responses.Get = ptr(`{"there_you_go":"maybe","nope":false}`)
-	newApi.Responses.Get = ptr(`{"still":true,"later":4,"tomorrow":"not sure"}`)
+	if json.Unmarshal([]byte(`{"new_json":true,"new_body":"a new response"}`), newApi.Responses.Get) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"this_is":4}`), newApi.Responses.Patch) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"there_you_go":"maybe","nope":false}`), newApi.Responses.Post) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"still":true,"later":4,"tomorrow":"not sure"}`), newApi.Responses.Delete) != nil {
+		t.Fatal("error while unmarshalling")
+	}
 	newBytes, err := json.Marshal(newApi)
 	if err != nil {
 		t.Fatalf("error while marshaling dummy mock api :%s", err)

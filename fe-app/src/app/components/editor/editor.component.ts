@@ -1,10 +1,22 @@
+// Core
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { IMockApi, dummyMockApi } from '@models/mockApi';
-import { initialMockApiJson, notificationLevel } from '@models/monaco';
+
+// External
+import * as monaco from 'monaco-editor';
+
+// Components
+import { jqxNotificationComponent } from 'jqwidgets-ng/jqxnotification';
+
+// Models
+import { IMockApi } from '@models/mockApi.model';
+import { initialMockApiJson, initialMockApiJsonString, notificationLevel } from '@models/editor.model';
+
+// Services
 import { EditorService } from '@services/editor';
 import { MockApiService } from '@services/mockApiService';
-import { jqxNotificationComponent } from 'jqwidgets-ng/jqxnotification';
-import * as monaco from 'monaco-editor';
+import { setThrowInvalidWriteToSignalError } from '@angular/core/primitives/signals';
+import { ConsoleLogger } from '@angular/compiler-cli';
+
 
 @Component({
   selector: 'app-editor',
@@ -16,9 +28,9 @@ export class EditorComponent implements OnInit {
   @ViewChild('jqxNotification', { static: false }) jqxNotification!: jqxNotificationComponent;
   
   public codeEditorInstance!: monaco.editor.IStandaloneCodeEditor;
-  public isSaveButtonEnabled : boolean = false
+  public isSaveButtonEnabled : boolean = true
 
-  private _selectedMockApi: IMockApi = dummyMockApi
+  private _selectedMockApi: IMockApi = initialMockApiJson
   private _isSelectedMockApiNew: boolean = true
 
   constructor(
@@ -30,9 +42,6 @@ export class EditorComponent implements OnInit {
 
   ngOnInit(): void {
 
-    // disable save button at startup
-    this.isSaveButtonEnabled = false
-
     // create monaco editor
     this.codeEditorInstance = monaco.editor.create(this._editorContainer.nativeElement, {
       theme: 'vs',
@@ -41,14 +50,15 @@ export class EditorComponent implements OnInit {
       language: 'json',
       minimap: { enabled: false },
       automaticLayout: true,
-      value: initialMockApiJson
+      value: initialMockApiJsonString
     });
 
     // subscribe to "new_mock_api_selected"
     this.mockApiService.newMockApiSelectedObservable().subscribe({
       next: (mockApi: IMockApi) => {
         this._selectedMockApi = mockApi
-        this._isSelectedMockApiNew = false
+        this._isSelectedMockApiNew = mockApi == initialMockApiJson
+        this.codeEditorInstance.setValue(JSON.stringify(mockApi, null, 2))
       },
       error: (err: Error) => {
         console.error("received error from newMockApiSelectedObservable subscription: ", err)
@@ -59,6 +69,7 @@ export class EditorComponent implements OnInit {
     if (this.codeEditorInstance.getModel() != null) {
       this.codeEditorInstance.getModel()!.onDidChangeContent((event) => {
         this.editorService.unsavedModifications = true
+        this._selectedMockApi = JSON.parse(this.codeEditorInstance.getValue())
       });
     }
     
@@ -77,6 +88,8 @@ export class EditorComponent implements OnInit {
 
   // used to assign our custom schema for the json file corresponding to the MockApi schema
   assignDefaultJsonSchema() {
+    // TODO: set empty strings as invalid
+    // TODO: make fields different than {name|url|response}
     monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
       validate: true,
       schemas: [{
@@ -122,12 +135,14 @@ export class EditorComponent implements OnInit {
   }
 
   onSave() {
+    if (!this.isSaveButtonEnabled) {
+      return
+    }
     if (this._isSelectedMockApiNew) {
       this.mockApiService.postMockApi(this._selectedMockApi).pipe().subscribe({
         error: (err : Error) => {
-          console.log("Could not create new MockApi: "+err)
-          this.notify("Could not create new MockApi: "+ err.message, notificationLevel.error)
-
+          console.log("Could not create new MockApi: " + err)
+          this.notify("Could not create new MockApi: " + err.message, notificationLevel.error)
         },
         complete: () => {
           const msg = "MockApi succesfully created"
@@ -140,8 +155,8 @@ export class EditorComponent implements OnInit {
     } else {
       this.mockApiService.patchMockApi(this._selectedMockApi).pipe().subscribe({
         error: (err : Error) => {
-          console.log("Could not modify new MockApi: "+ err.message)
-          this.notify("Could not modify new MockApi: "+ err.message, notificationLevel.error)
+          console.log("Could not modify new MockApi: " + err.message)
+          this.notify("Could not modify new MockApi: " + err.message, notificationLevel.error)
 
         },
         complete: () => {

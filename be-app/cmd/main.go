@@ -67,6 +67,9 @@ waitingCycle:
 }
 
 func handlePanic(ch chan bool) {
+	// TODO: stopping the app with a syscall will fill the recovered err with:
+	// 		Recovered panic: %!f(runtime.plainError=close of closed channel)
+	// try to fix this
 	if err := recover(); err != nil {
 		log.Fatalf("Recovered panic: %f", err)
 	}

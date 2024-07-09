@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { isDefined } from '@common/common';
-import { IMockApi, dummyMockApi } from '@models/mockApi';
+import { initialMockApiJson } from '@models/editor.model';
+import { IMockApi } from '@models/mockApi.model';
 import { MockApiService } from '@services/mockApiService';
 
 @Component({
@@ -10,7 +11,7 @@ import { MockApiService } from '@services/mockApiService';
 })
 export class ApiListItemComponent implements OnInit{
   @Output() click = new EventEmitter<string>()
-  @Input() mockApi : IMockApi = dummyMockApi
+  @Input() mockApi : IMockApi = initialMockApiJson
 
   constructor(
     private mockApiService : MockApiService
@@ -18,7 +19,7 @@ export class ApiListItemComponent implements OnInit{
 
   ngOnInit(): void {
     // check that the mockApi has been correctly filled with Input value
-    if (this.mockApi === dummyMockApi) {
+    if (this.mockApi === initialMockApiJson) {
       console.error("mock Api not correctly passed in from the parent component");
     }
 

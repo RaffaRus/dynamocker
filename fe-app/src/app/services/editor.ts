@@ -1,7 +1,4 @@
-import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { IMockApi, dummyMockApi } from "@models/mockApi";
-import { BehaviorSubject, Observable } from "rxjs";
 
 @Injectable()
 export class EditorService {

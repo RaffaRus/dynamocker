@@ -12,6 +12,11 @@
 
 <div class="column right-wrapper" id="editorContainer">
   <div class="monaco" #monacoDivTag></div>
-  <div class="save-button" (click)="onSave()" *ngIf="isSaveButtonEnabled">Save</div>
+    <div 
+      class="save-button-disabled" 
+      (click)="onSave()" 
+      [ngClass]="{'save-button-enabled': isSaveButtonEnabled}">
+        Save
+    </div>
   <div class="notification" id="notificationContainer"></div>
 </div>

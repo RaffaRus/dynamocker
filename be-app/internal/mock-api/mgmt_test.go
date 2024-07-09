@@ -23,24 +23,45 @@ func reset(t *testing.T) {
 	assert.Equal(t, 0, len(mockApiList))
 }
 
-func dummyMockApi() MockApi {
+func dummyMockApi(t *testing.T) MockApi {
+	var response Response
+	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"example_patch_body":"this is a string returned from patch operation"}`), &response.Patch) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"error":"posted an invalid element"}`), &response.Post) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"response":"removed the item number 3"}`), &response.Delete) != nil {
+		t.Fatal("error while unmashaling")
+	}
 	return MockApi{
 		Name:         fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:          "url.com",
 		FilePath:     os.TempDir(),
 		Added:        time.Now(),
 		LastModified: time.Now(),
-		Responses: Response{
-			Get:    ptr(`{"valid_json":true,"body":"this is the response"}`),
-			Patch:  ptr(`{"example_patch_body":"this is a string returned from patch operation"}`),
-			Post:   ptr(`{"error":"posted an invalid element"}`),
-			Delete: ptr(`{"response":"removed the item number 3"}`),
-		},
+		Responses:    response,
 	}
 }
 
-func dummyMockApiArray() []*MockApi {
+func dummyMockApiArray(t *testing.T) []*MockApi {
 	var mockApis []*MockApi
+	var response Response
+	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"example_patch_body":"this is a string returned from patch operation"}`), &response.Patch) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"error":"posted an invalid element"}`), &response.Post) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"response":"removed the item number 3"}`), &response.Delete) != nil {
+		t.Fatal("error while unmashaling")
+	}
 	for i := 0; i < 5; i++ {
 		mockApis = append(mockApis,
 			&MockApi{
@@ -49,12 +70,7 @@ func dummyMockApiArray() []*MockApi {
 				FilePath:     os.TempDir(),
 				Added:        time.Now(),
 				LastModified: time.Now(),
-				Responses: Response{
-					Get:    ptr(`{"valid_json":true,"body":"this is the response"}`),
-					Patch:  ptr(`{"example_patch_body":"this is a string returned from patch operation"}`),
-					Post:   ptr(`{"error":"posted an invalid element"}`),
-					Delete: ptr(`{"response":"removed the item number 3"}`),
-				},
+				Responses:    response,
 			})
 	}
 	return mockApis
@@ -63,7 +79,7 @@ func dummyMockApiArray() []*MockApi {
 // write a dummy mock api file to the Temp folder. The temp folder
 // comes from os package
 func writeDummyMockApiFile(t *testing.T) (*os.File, MockApi) {
-	mockApi := dummyMockApi()
+	mockApi := dummyMockApi(t)
 	file, err := os.CreateTemp("", "dummy-mock-api-*.json")
 	if err != nil {
 		file.Close()
@@ -163,7 +179,7 @@ func TestGetAPIs(t *testing.T) {
 	assert.Empty(t, GetAPIs(), "GetAPIs() should return empty array")
 
 	// add apis to the map and check length
-	mockApis := dummyMockApiArray()
+	mockApis := dummyMockApiArray(t)
 	for i := 0; i < 5; i++ {
 		mockApiList[mockApis[i].Name] = mockApis[i]
 	}
@@ -184,7 +200,7 @@ func TestGetAPI(t *testing.T) {
 	assert.Equal(t, err, fmt.Errorf("requested mockApi %s has not been found", key))
 
 	// add mock api to the map
-	mockApi := dummyMockApi()
+	mockApi := dummyMockApi(t)
 	mockApiList[mockApi.Name] = &mockApi
 
 	// check the get works
@@ -303,7 +319,7 @@ func TestObserveFolderNoJson(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(notJsonFile.Name())
-	data, err := json.Marshal(dummyMockApi())
+	data, err := json.Marshal(dummyMockApi(t))
 	if err != nil {
 		notJsonFile.Close()
 		t.Fatalf("error while marshaling dummy mock api :%s", err)
@@ -362,10 +378,18 @@ func TestObserveFolder(t *testing.T) {
 	nowTime := time.Now()
 	mockApi.LastModified = nowTime
 	mockApi.URL = "newUrl.com"
-	mockApi.Responses.Delete = ptr(`{"new_delete":"body"}`)
-	mockApi.Responses.Get = ptr(`{"new_get":"body"}`)
-	mockApi.Responses.Patch = ptr(`{"new_patch":"body"}`)
-	mockApi.Responses.Post = ptr(`{"new_post":"body"}`)
+	if json.Unmarshal([]byte(`{"new_delete":"body"}`), &mockApi.Responses.Delete) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"new_get":"body"}`), &mockApi.Responses.Get) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"new_patch":"body"}`), &mockApi.Responses.Patch) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"new_post":"body"}`), &mockApi.Responses.Post) != nil {
+		t.Fatal("error while unmarshalling")
+	}
 	data, err := json.Marshal(mockApi)
 	if err != nil {
 		file.Close()

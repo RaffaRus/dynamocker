@@ -28,8 +28,8 @@ type MockApi struct {
 }
 
 type Response struct {
-	Get    *string `json:"get,omitempty" validate:"omitempty,json"`
-	Patch  *string `json:"patch,omitempty" validate:"omitempty,json"`
-	Post   *string `json:"post,omitempty" validate:"omitempty,json"`
-	Delete *string `json:"delete,omitempty" validate:"omitempty,json"`
+	Get    *map[string]interface{} `json:"get,omitempty" validate:"omitempty,json"`
+	Patch  *map[string]interface{} `json:"patch,omitempty" validate:"omitempty,json"`
+	Post   *map[string]interface{} `json:"post,omitempty" validate:"omitempty,json"`
+	Delete *map[string]interface{} `json:"delete,omitempty" validate:"omitempty,json"`
 }

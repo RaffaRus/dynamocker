@@ -1,6 +1,6 @@
-import * as monaco from 'monaco-editor';
+import { IMockApi } from './mockApi.model';
 
-export const initialMockApiJson : string = [
+export const initialMockApiJsonString : string = [
     '{',
     '    "name": "",',
     '    "url": "", ',
@@ -12,6 +12,8 @@ export const initialMockApiJson : string = [
     '     }',
     '}'
   ].join('\n')
+
+export const initialMockApiJson : IMockApi = JSON.parse(initialMockApiJsonString)
 
 export const enum  notificationLevel {
     info = 1, 

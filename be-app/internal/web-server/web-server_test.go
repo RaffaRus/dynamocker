@@ -44,26 +44,34 @@ func setup(t *testing.T) (chan bool, *WebServer) {
 	return closeCh, webServerTest
 }
 
-func dummyMockApi() mockapi.MockApi {
+func dummyMockApi(t *testing.T) mockapi.MockApi {
+	var response mockapi.Response
+	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"example_patch_body":"this is a string returned from patch operation"}`), &response.Patch) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"error":"posted an invalid element"}`), &response.Post) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"response":"removed the item number 3"}`), &response.Delete) != nil {
+		t.Fatal("error while unmashaling")
+	}
 	return mockapi.MockApi{
 		Name:         fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:          "url.com",
 		FilePath:     os.TempDir(),
 		Added:        time.Now(),
 		LastModified: time.Now(),
-		Responses: mockapi.Response{
-			Get:    ptr(`{"valid_json":true,"body":"this is the response"}`),
-			Patch:  ptr(`{"example_patch_body":"this is a string returned from patch operation"}`),
-			Post:   ptr(`{"error":"posted an invalid element"}`),
-			Delete: ptr(`{"response":"removed the item number 3"}`),
-		},
+		Responses:    response,
 	}
 }
 
 // write a dummy mock api file to the Temp folder. The temp folder
 // comes from os package
 func writeDummyMockApiFile(t *testing.T) (*os.File, mockapi.MockApi) {
-	mockApi := dummyMockApi()
+	mockApi := dummyMockApi(t)
 	filePath := mockApi.FilePath + "/" + mockApi.Name + ".json"
 
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -247,7 +255,7 @@ func TestPostMockApi(t *testing.T) {
 	r := httptest.NewRecorder()
 
 	// test post api without key
-	mockApiPost := dummyMockApi()
+	mockApiPost := dummyMockApi(t)
 	bytesPost, err := json.Marshal(mockApiPost)
 	if err != nil {
 		t.Fatalf("error while marshalign object : %s", err)
@@ -326,10 +334,18 @@ func TestPatch(t *testing.T) {
 	mockApi.URL = "new-url.it"
 	newTime := time.Now()
 	mockApi.LastModified = newTime
-	mockApi.Responses.Get = ptr(`{"new_get":true,"body":"new response"}`)
-	mockApi.Responses.Delete = ptr(`{"new_delete":"deleted"}`)
-	mockApi.Responses.Post = ptr(`{"new_post":1,"success":true}`)
-	mockApi.Responses.Patch = ptr(`{"patched":"yes","id":3}`)
+	if json.Unmarshal([]byte(`{"new_get":true,"body":"new response"}`), &mockApi.Responses.Get) != nil {
+		t.Fatalf("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"new_delete":"deleted"}`), &mockApi.Responses.Delete) != nil {
+		t.Fatalf("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"new_post":1,"success":true}`), &mockApi.Responses.Post) != nil {
+		t.Fatalf("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"patched":"yes","id":3}`), &mockApi.Responses.Patch) != nil {
+		t.Fatalf("error while unmarshalling")
+	}
 	url := "/dynamocker/api/mock-api/" + mockApi.Name
 	r := httptest.NewRecorder()
 	bytesPatch, err := json.Marshal(mockApi)

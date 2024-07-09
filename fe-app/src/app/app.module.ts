@@ -15,7 +15,6 @@ import {MatButtonModule} from '@angular/material/button';
 import { AppComponent } from './app.component';
 import { ApiListComponent } from '@components/api-list/api-list.component';
 import { ApiListItemComponent } from '@components/api-list-item/api-list-item.component';
-import { BackgroundComponent } from '@components/background/background.component';
 import { EditorComponent } from '@components/editor/editor.component';
 import { TreeComponent } from '@components/tree/tree.component';
 import { jqxButtonModule } from 'jqwidgets-ng/jqxbuttons';
@@ -28,7 +27,6 @@ import { EditorService } from '@services/editor';
 @NgModule({
     declarations: [
         AppComponent,
-        BackgroundComponent,
         ApiListComponent,
         ApiListItemComponent,
         EditorComponent,
