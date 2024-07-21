@@ -141,7 +141,7 @@ export class EditorComponent implements OnInit {
     if (this._isSelectedMockApiNew) {
       this.mockApiService.postMockApi(this._selectedMockApi).pipe().subscribe({
         error: (err : Error) => {
-          console.log("Could not create new MockApi: " + err)
+          console.error("Could not create new MockApi: " + err)
           this.notify("Could not create new MockApi: " + err.message, notificationLevel.error)
         },
         complete: () => {
@@ -155,7 +155,7 @@ export class EditorComponent implements OnInit {
     } else {
       this.mockApiService.patchMockApi(this._selectedMockApi).pipe().subscribe({
         error: (err : Error) => {
-          console.log("Could not modify new MockApi: " + err.message)
+          console.error("Could not modify new MockApi: " + err.message)
           this.notify("Could not modify new MockApi: " + err.message, notificationLevel.error)
 
         },

@@ -34,17 +34,17 @@ export class ApiListItemComponent implements OnInit{
   mockApiResponses(): string[] {
     // create the array first, then remove items if they are not defined in the mock api
     let responses : string[] = ["GET","POST","PATCH","DELETE"]
-    if (!isDefined(this.mockApi.Responses.Get)) {delete responses[responses.findIndex((name: string) => {return name==="Get"})]}
-    if (!isDefined(this.mockApi.Responses.Post)) {delete responses[responses.findIndex((name: string) => {return name==="Post"})]}
-    if (!isDefined(this.mockApi.Responses.Patch)) {delete responses[responses.findIndex((name: string) => {return name==="Patch"})]}
-    if (!isDefined(this.mockApi.Responses.Delete)) {delete responses[responses.findIndex((name: string) => {return name==="Delete"})]}
+    if (!isDefined(this.mockApi.responses.get)) {delete responses[responses.findIndex((name: string) => {return name==="Get"})]}
+    if (!isDefined(this.mockApi.responses.post)) {delete responses[responses.findIndex((name: string) => {return name==="Post"})]}
+    if (!isDefined(this.mockApi.responses.patch)) {delete responses[responses.findIndex((name: string) => {return name==="Patch"})]}
+    if (!isDefined(this.mockApi.responses.delete)) {delete responses[responses.findIndex((name: string) => {return name==="Delete"})]}
     return responses
   }
 
   public onDeleteItem() {
     console.log("item removed")
     // delete mock api from the back end
-    this.mockApiService.deleteAllMockApis(this.mockApi.Name).subscribe({
+    this.mockApiService.deleteAllMockApis(this.mockApi.name).subscribe({
       next: (value) => {
         console.log(value)
         // emit the requirement to refresh list

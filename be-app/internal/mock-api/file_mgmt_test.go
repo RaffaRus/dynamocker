@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -56,42 +55,6 @@ func TestAddNewMockApiFile(t *testing.T) {
 		t.Fatal("error while marshaling struct")
 	}
 	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.URL' Error:Field validation for 'URL' failed on the 'required' tag")
-
-	// add struct with no FilePath
-	invalidStruct = dummyMockApi(t)
-	invalidStruct.FilePath = ""
-	bytes, err = json.Marshal(invalidStruct)
-	if err != nil {
-		t.Fatal("error while marshaling struct")
-	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.FilePath' Error:Field validation for 'FilePath' failed on the 'dir' tag")
-
-	// add struct with invalid FilePath
-	invalidStruct = dummyMockApi(t)
-	invalidStruct.FilePath = "not a directory path"
-	bytes, err = json.Marshal(invalidStruct)
-	if err != nil {
-		t.Fatal("error while marshaling struct")
-	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.FilePath' Error:Field validation for 'FilePath' failed on the 'dir' tag")
-
-	// add struct with no Added
-	invalidStruct = dummyMockApi(t)
-	invalidStruct.Added = time.Time{}
-	bytes, err = json.Marshal(invalidStruct)
-	if err != nil {
-		t.Fatal("error while marshaling struct")
-	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Added' Error:Field validation for 'Added' failed on the 'required' tag")
-
-	// add struct with no Last Modified
-	invalidStruct = dummyMockApi(t)
-	invalidStruct.LastModified = time.Time{}
-	bytes, err = json.Marshal(invalidStruct)
-	if err != nil {
-		t.Fatal("error while marshaling struct")
-	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.LastModified' Error:Field validation for 'LastModified' failed on the 'required' tag")
 
 	// add struct with no Response
 	invalidStruct = dummyMockApi(t)
@@ -165,7 +128,6 @@ func TestModifyMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("errror while unmarshaling : %s", err)
 	}
-	newApi.LastModified = time.Now()
 	if json.Unmarshal([]byte(`{"new_json":true,"new_body":"a new response"}`), newApi.Responses.Get) != nil {
 		t.Fatal("error while unmarshalling")
 	}

@@ -1,9 +1,5 @@
 package mockapi
 
-import (
-	"time"
-)
-
 // Structure used to model the MockApi.
 //
 //	TODO: add mocking payload
@@ -18,18 +14,12 @@ type MockApi struct {
 	// path where the file is stored, without the file name
 	FilePath string `json:"filePath" validate:"dir,required"`
 
-	// timestamp of creation
-	Added time.Time `json:"added" validate:"required"`
-
-	// timestamp of last modification
-	LastModified time.Time `json:"lastModified" validate:"required"`
-
 	Responses Response `json:"responses" validate:"required"`
 }
 
 type Response struct {
-	Get    *map[string]interface{} `json:"get,omitempty" validate:"omitempty,json"`
-	Patch  *map[string]interface{} `json:"patch,omitempty" validate:"omitempty,json"`
-	Post   *map[string]interface{} `json:"post,omitempty" validate:"omitempty,json"`
-	Delete *map[string]interface{} `json:"delete,omitempty" validate:"omitempty,json"`
+	Get    *map[string]interface{} `json:"get,omitempty"`
+	Patch  *map[string]interface{} `json:"patch,omitempty"`
+	Post   *map[string]interface{} `json:"post,omitempty"`
+	Delete *map[string]interface{} `json:"delete,omitempty"`
 }

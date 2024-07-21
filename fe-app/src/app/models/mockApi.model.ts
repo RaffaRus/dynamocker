@@ -1,29 +1,27 @@
 export interface  IMockApi {
-    Name :string
-    URL: string
-    Added: Date
-    LastModified: Date
-    Responses: IResponse
+    name :string
+    url: string
+    added: Date
+    responses: IResponse
 }
 
 interface IResponse {
-    Get?: JSON
-    Patch?: JSON
-    Delete?: JSON
-    Post?: JSON
+    get?: JSON
+    patch?: JSON
+    delete?: JSON
+    post?: JSON
 }
 
 export interface  IModifiedMockApi {
-    Name :string
-    URL: string
-    Added: Date
-    LastModified: Date
-    Responses: IModifiedResponse
+    name :string
+    url: string
+    added: Date
+    responses: IModifiedResponse
 }
 
 interface IModifiedResponse {
-    Get?: string
-    Patch?: string
-    Delete?: string
-    Post?: string
+    get?: string
+    patch?: string
+    delete?: string
+    post?: string
 }

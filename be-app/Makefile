@@ -1,4 +1,5 @@
 # Golang
+
 dynamocker:
 	@ go build -o build/dynamocker cmd/main.go
 

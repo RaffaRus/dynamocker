@@ -59,12 +59,10 @@ func dummyMockApi(t *testing.T) mockapi.MockApi {
 		t.Fatal("error while unmashaling")
 	}
 	return mockapi.MockApi{
-		Name:         fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
-		URL:          "url.com",
-		FilePath:     os.TempDir(),
-		Added:        time.Now(),
-		LastModified: time.Now(),
-		Responses:    response,
+		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
+		URL:       "url.com",
+		FilePath:  os.TempDir(),
+		Responses: response,
 	}
 }
 
@@ -303,9 +301,6 @@ func TestPostMockApi(t *testing.T) {
 	assert.Equal(t, mockApiPost.Responses.Post, mockApi.Responses.Post)
 	assert.Equal(t, mockApiPost.Responses.Delete, mockApi.Responses.Delete)
 	assert.Equal(t, mockApiPost.Responses.Patch, mockApi.Responses.Patch)
-	// time cannot be compared using the "==" operator
-	assert.True(t, mockApi.Added.Equal(mockApiPost.Added))
-	assert.True(t, mockApi.LastModified.Equal(mockApiPost.LastModified))
 }
 
 func TestPatch(t *testing.T) {
@@ -332,8 +327,6 @@ func TestPatch(t *testing.T) {
 
 	// test patch api
 	mockApi.URL = "new-url.it"
-	newTime := time.Now()
-	mockApi.LastModified = newTime
 	if json.Unmarshal([]byte(`{"new_get":true,"body":"new response"}`), &mockApi.Responses.Get) != nil {
 		t.Fatalf("error while unmarshalling")
 	}
@@ -368,9 +361,6 @@ func TestPatch(t *testing.T) {
 	assert.Equal(t, currentMockApi.Responses.Post, mockApi.Responses.Post)
 	assert.Equal(t, currentMockApi.Responses.Delete, mockApi.Responses.Delete)
 	assert.Equal(t, currentMockApi.Responses.Patch, mockApi.Responses.Patch)
-	// time cannot be compared using the "==" operator
-	assert.True(t, mockApi.Added.Equal(currentMockApi.Added))
-	assert.True(t, mockApi.LastModified.Equal(currentMockApi.LastModified))
 }
 
 func ptr[A any](a A) *A {

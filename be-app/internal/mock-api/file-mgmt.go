@@ -33,6 +33,9 @@ func AddNewMockApiFile(fileName string, body []byte) error {
 		return err
 	}
 
+	// add 'FilePath'
+	mockApi.FilePath = folderPath
+
 	// validate body
 	vtor := validator.New(validator.WithRequiredStructEnabled())
 	vtorErr := vtor.Struct(mockApi)
@@ -51,8 +54,14 @@ func AddNewMockApiFile(fileName string, body []byte) error {
 	// retrieve file path
 	filePath := folderPath + "/" + fileName + ".json"
 
+	// transform mockApi into []byte
+	bytes, err := json.Marshal(mockApi)
+	if err != nil {
+		return fmt.Errorf("file %s not created. error while marshalling modified mockapi: %s", filePath, err)
+	}
+
 	// write mockapi
-	if err := os.WriteFile(filePath, body, fs.ModePerm); err != nil {
+	if err := os.WriteFile(filePath, bytes, fs.ModePerm); err != nil {
 		return fmt.Errorf("file %s not created: %s", filePath, err)
 	}
 

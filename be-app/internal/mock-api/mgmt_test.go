@@ -38,12 +38,10 @@ func dummyMockApi(t *testing.T) MockApi {
 		t.Fatal("error while unmashaling")
 	}
 	return MockApi{
-		Name:         fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
-		URL:          "url.com",
-		FilePath:     os.TempDir(),
-		Added:        time.Now(),
-		LastModified: time.Now(),
-		Responses:    response,
+		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
+		URL:       "url.com",
+		FilePath:  os.TempDir(),
+		Responses: response,
 	}
 }
 
@@ -65,12 +63,10 @@ func dummyMockApiArray(t *testing.T) []*MockApi {
 	for i := 0; i < 5; i++ {
 		mockApis = append(mockApis,
 			&MockApi{
-				Name:         fmt.Sprintf("dummy-mock-api-%d", i),
-				URL:          "url.com",
-				FilePath:     os.TempDir(),
-				Added:        time.Now(),
-				LastModified: time.Now(),
-				Responses:    response,
+				Name:      fmt.Sprintf("dummy-mock-api-%d", i),
+				URL:       "url.com",
+				FilePath:  os.TempDir(),
+				Responses: response,
 			})
 	}
 	return mockApis
@@ -370,13 +366,8 @@ func TestObserveFolder(t *testing.T) {
 	assert.Equal(t, mockApi.Responses.Patch, retrievedMockApi.Responses.Patch)
 	assert.Equal(t, mockApi.Responses.Post, retrievedMockApi.Responses.Post)
 	assert.Equal(t, mockApi.Responses.Delete, retrievedMockApi.Responses.Delete)
-	// time cannot be compared using the "==" operator
-	assert.True(t, mockApi.Added.Equal(retrievedMockApi.Added))
-	assert.True(t, mockApi.LastModified.Equal(retrievedMockApi.LastModified))
 
 	// modify the file
-	nowTime := time.Now()
-	mockApi.LastModified = nowTime
 	mockApi.URL = "newUrl.com"
 	if json.Unmarshal([]byte(`{"new_delete":"body"}`), &mockApi.Responses.Delete) != nil {
 		t.Fatal("error while unmarshalling")
@@ -423,9 +414,6 @@ func TestObserveFolder(t *testing.T) {
 	assert.Equal(t, mockApi.Responses.Patch, retrievedMockApi.Responses.Patch)
 	assert.Equal(t, mockApi.Responses.Post, retrievedMockApi.Responses.Post)
 	assert.Equal(t, mockApi.Responses.Delete, retrievedMockApi.Responses.Delete)
-	// time cannot be compared using the "==" operator
-	assert.True(t, mockApi.Added.Equal(retrievedMockApi.Added))
-	assert.True(t, mockApi.LastModified.Equal(retrievedMockApi.LastModified))
 
 	// remove file
 	os.Remove(file.Name())

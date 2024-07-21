@@ -70,6 +70,7 @@ func getMockApi(w http.ResponseWriter, r *http.Request) {
 // POST http://<dynamocker-server>/mock-api/{id}
 // add mock api
 func postMockApi(w http.ResponseWriter, r *http.Request) {
+	// retrieve id
 	vars := mux.Vars(r)
 	mockApiName, ok := vars["id"]
 	if mockApiName == "" || !ok {
@@ -78,6 +79,7 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
+	// load body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		err := fmt.Errorf("error while reading request body: %s", err)
@@ -86,6 +88,7 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// add mock api file to the folder
 	if err = mockapi.AddNewMockApiFile(mockApiName, body); err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

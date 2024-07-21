@@ -49,12 +49,12 @@ export class MockApiService {
     }
     
     postMockApi(mockApi : IMockApi) : Observable<null> {
-        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.Name
+        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.name
         return this.httpClient.post<null>(url, JSON.stringify(mockApi))
     }
     
     patchMockApi(mockApi : IMockApi) : Observable<null> {
-        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.Name
+        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.name
         return this.httpClient.patch<null>(url, JSON.stringify(mockApi))
     }
 
