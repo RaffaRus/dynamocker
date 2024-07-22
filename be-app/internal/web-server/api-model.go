@@ -5,10 +5,11 @@ import "net/http"
 type Method string
 
 const (
-	GET    Method = http.MethodGet
-	POST   Method = http.MethodPost
-	PATCH  Method = http.MethodPatch
-	DELETE Method = http.MethodDelete
+	GET     Method = http.MethodGet
+	POST    Method = http.MethodPost
+	PATCH   Method = http.MethodPatch
+	DELETE  Method = http.MethodDelete
+	OPTIONS Method = http.MethodOptions
 )
 
 type ApiInterface interface {

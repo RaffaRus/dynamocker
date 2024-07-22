@@ -1,5 +1,5 @@
 // Core
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterContentInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 // External
 import * as monaco from 'monaco-editor';
@@ -172,8 +172,10 @@ export class EditorComponent implements OnInit {
   }
   
   notify(msg: string, level: notificationLevel): void {
+    console.log(this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content'))
     this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = msg;
-    this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer').classList.add(level)
+    // console.log(this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer'))
+    // this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer').classList.add(level)
     this.jqxNotification.open();
 };
 }

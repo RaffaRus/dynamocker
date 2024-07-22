@@ -44,7 +44,7 @@ export class ApiListItemComponent implements OnInit{
   public onDeleteItem() {
     console.log("item removed")
     // delete mock api from the back end
-    this.mockApiService.deleteAllMockApis(this.mockApi.name).subscribe({
+    this.mockApiService.deleteMockApi(this.mockApi.name).subscribe({
       next: (value) => {
         console.log(value)
         // emit the requirement to refresh list

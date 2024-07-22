@@ -30,6 +30,7 @@ export class MockApiService {
     }
     
     refreshList() {
+        console.log("someone requested a refresh of the list")
         this.refreshListSub.next(null)
     }
 
@@ -38,7 +39,7 @@ export class MockApiService {
         return this.httpClient.get<IMockApi[] >(url)
     }
 
-    deleteAllMockApis(mockApiName : string) : Observable<null> {
+    deleteMockApi(mockApiName : string) : Observable<null> {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" + mockApiName
         return this.httpClient.delete<null>(url)
     }

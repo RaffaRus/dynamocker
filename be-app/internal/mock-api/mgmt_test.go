@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -476,6 +477,49 @@ func TestStopObserving(t *testing.T) {
 
 }
 
-func ptr[A any](a A) *A {
-	return &a
+func TestDetectAlreadyExistingMockApi(t *testing.T) {
+	reset(t)
+
+	// add mock api to the map
+	mockApi := dummyMockApi(t)
+	mockApiList[mockApi.Name] = &mockApi
+
+	assert.True(t, reflect.DeepEqual(mockApi, mockApi))
+
+	mockApiDifferentName := mockApi
+	mockApiDifferentName.Name = "differentName"
+	assert.False(t, reflect.DeepEqual(mockApiDifferentName, mockApi))
+
+	mockApiDifferentURL := mockApi
+	mockApiDifferentURL.URL = "differentURL.com"
+	assert.False(t, reflect.DeepEqual(mockApiDifferentURL, mockApi))
+
+	mockApiDifferentGetResponse := mockApi
+	mockApiDifferentGetResponse.Responses.Get = nil
+	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentGetResponse.Responses.Get) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	assert.False(t, reflect.DeepEqual(mockApiDifferentGetResponse, mockApi))
+
+	mockApiDifferentPostResponse := mockApi
+	mockApiDifferentPostResponse.Responses.Post = nil
+	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentPostResponse.Responses.Post) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	assert.False(t, reflect.DeepEqual(mockApiDifferentPostResponse, mockApi))
+
+	mockApiDifferentPatchResponse := mockApi
+	mockApiDifferentPatchResponse.Responses.Patch = nil
+	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentPatchResponse.Responses.Patch) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	assert.False(t, reflect.DeepEqual(mockApiDifferentPatchResponse, mockApi))
+
+	mockApiDifferentDeleteResponse := mockApi
+	mockApiDifferentDeleteResponse.Responses.Delete = nil
+	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentDeleteResponse.Responses.Delete) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	assert.False(t, reflect.DeepEqual(mockApiDifferentDeleteResponse, mockApi))
+
 }

@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -40,7 +41,7 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 }
 
 // loading the APIs from the mock api folder at startup
-// this function empties the mock api map and creates a new one
+// this function updates the list based on the entried loaded from the folder
 func loadAPIsFromFolder() (err error) {
 
 	mu.Lock()
@@ -59,12 +60,67 @@ func loadAPIsFromFolder() (err error) {
 
 	for _, file := range files {
 
+		// select only *.json files
 		if !strings.HasSuffix(file.Name(), ".json") {
 			continue
 		}
 
-		detectedNewMockApi(folderPath + "/" + file.Name())
+		pathToFile := folderPath + "/" + file.Name()
 
+		// get fileName
+		fileName, ok := strings.CutSuffix(file.Name(), ".json")
+		if !ok {
+			log.Error("suffix '.json' not found in the ", pathToFile, " file")
+			continue
+		}
+
+		// open file
+		jsonFile, err := os.Open(pathToFile)
+		if err != nil {
+			log.Errorf("error while opening the file %s: %s", pathToFile, err)
+			continue
+		}
+
+		// read content
+		byteValue, err := io.ReadAll(jsonFile)
+		if err != nil {
+			log.Errorf("error while reading the file %s: %s", pathToFile, err)
+			continue
+		}
+
+		// unmarshal content
+		var mockApi MockApi
+		err = json.Unmarshal(byteValue, &mockApi)
+		if err != nil {
+			log.Errorf("error while unmarshaling the json file %s into the struct: %s", pathToFile, err)
+			continue
+		}
+		mockApi.FilePath = folderPath
+
+		// validate content
+		vtor := validator.New(validator.WithRequiredStructEnabled())
+		err = vtor.Struct(mockApi)
+		if err != nil {
+			log.Errorf("invalid mock api saved in the json file %s into the struct: %s", pathToFile, err)
+			continue
+		}
+
+		// check if it already exists
+		if savedMockApi, ok := mockApiList[mockApi.Name]; ok {
+			log.Debug("found another mock api named '", mockApi.Name, "'. Comparing the old one with the new one")
+			if reflect.DeepEqual(mockApi, *savedMockApi) {
+				log.Debug("mock api named '", mockApi.Name, "' is a duplicate. No action needed")
+				continue
+			}
+			log.Debug("mock api named '", mockApi.Name, "' is different. Removing the old one and adding the new one to the list")
+			delete(mockApiList, mockApi.Name)
+		}
+
+		// add mockApi to the list
+		mockApi.Name = fileName
+		mockApiList[fileName] = &mockApi
+
+		log.Info("loaded '", fileName, "' mock API")
 	}
 
 	return nil
@@ -125,12 +181,12 @@ detectingCycle:
 			}
 			// any modification to the api file
 			if event.Has(fsnotify.Write) {
-				log.Info("modified json detected in the folder: ", fileName)
+				log.Debug("modified json detected in the folder: ", fileName)
 				detectedNewMockApi(event.Name)
 			}
 			// removed api file
 			if event.Has(fsnotify.Remove) {
-				log.Info("removed json detected in the folder: ", fileName)
+				log.Debug("removed json detected in the folder: ", fileName)
 				detectedRemovedMockApi(event.Name)
 			}
 		case err, ok := <-watcher.Errors:
@@ -186,29 +242,28 @@ pollingCycle:
 
 func detectedNewMockApi(pathToFile string) {
 
+	// retireve file name
 	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
 	if !ok {
 		log.Error("suffix '.json' not found in the ", pathToFile, " file")
 		return
 	}
 
-	if _, ok = mockApiList[fileName]; ok {
-		log.Info("mock api named '", fileName, "' already present. Replacing the old one with the new one")
-		detectedRemovedMockApi(pathToFile)
-	}
-
+	// open file
 	jsonFile, err := os.Open(pathToFile)
 	if err != nil {
 		log.Errorf("error while opening the file %s: %s", pathToFile, err)
 		return
 	}
 
+	// read content
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		log.Errorf("error while reading the file %s: %s", pathToFile, err)
 		return
 	}
 
+	// unmarshal content
 	var mockApi MockApi
 	err = json.Unmarshal(byteValue, &mockApi)
 	if err != nil {
@@ -216,6 +271,7 @@ func detectedNewMockApi(pathToFile string) {
 		return
 	}
 
+	// validate structure
 	vtor := validator.New(validator.WithRequiredStructEnabled())
 	err = vtor.Struct(mockApi)
 	if err != nil {
@@ -223,10 +279,21 @@ func detectedNewMockApi(pathToFile string) {
 		return
 	}
 
+	// check if it already exists
+	if savedMockApi, ok := mockApiList[fileName]; ok {
+		log.Debug("found another mock api named '", fileName, "'. Comparing the old one with the new one")
+		if reflect.DeepEqual(mockApi, *savedMockApi) {
+			log.Debug("mock api named '", mockApi.Name, "' has not changed. No action needed")
+			return
+		}
+		log.Debug("mock api named '", mockApi.Name, "' is different. Removing the old one and adding the new one to the list")
+		detectedRemovedMockApi(pathToFile)
+	}
+
 	mockApi.Name = fileName
 	mockApiList[fileName] = &mockApi
 
-	log.Info("loaded ", fileName, " mock API")
+	log.Info("loaded '", fileName, "' mock API")
 
 }
 

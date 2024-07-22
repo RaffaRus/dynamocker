@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -15,17 +16,19 @@ var apis []Api = []Api{
 	{
 		resource: "mock-apis",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
-			GET:    getMockApis,
-			DELETE: deleteMockApis,
+			GET:     getMockApis,
+			OPTIONS: getMockApis,
+			DELETE:  deleteMockApis,
 		},
 	},
 	{
 		resource: "mock-api/{id}",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
-			GET:    getMockApi,
-			POST:   postMockApi,
-			PATCH:  patchMockApi,
-			DELETE: deleteMockApi,
+			GET:     getMockApi,
+			OPTIONS: getMockApi,
+			POST:    postMockApi,
+			PATCH:   patchMockApi,
+			DELETE:  deleteMockApi,
 		},
 	},
 }
@@ -77,6 +80,15 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 		err := fmt.Errorf("no mockApiName provided in the URL")
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	// return error if the mockApi already exists. Wrong method used (it should be a patch)
+	jsonFiles := readJsonFilesFromFolder()
+	if slices.Contains(jsonFiles, mockApiName) {
+		err := fmt.Errorf("mockApi with name '" + mockApiName + "' already existing'")
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// load body
