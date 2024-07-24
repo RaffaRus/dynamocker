@@ -17,7 +17,7 @@ var apis []Api = []Api{
 		resource: "mock-apis",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
 			GET:     getMockApis,
-			OPTIONS: getMockApis,
+			OPTIONS: getOptions,
 			DELETE:  deleteMockApis,
 		},
 	},
@@ -25,12 +25,29 @@ var apis []Api = []Api{
 		resource: "mock-api/{id}",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
 			GET:     getMockApi,
-			OPTIONS: getMockApi,
+			OPTIONS: getOptions,
 			POST:    postMockApi,
 			PATCH:   patchMockApi,
 			DELETE:  deleteMockApi,
 		},
 	},
+	{
+		resource: "serve-mock-api/{mockApiName}",
+		handler: map[Method]func(http.ResponseWriter, *http.Request){
+			GET:     serveMockApi,
+			OPTIONS: getOptions,
+			POST:    serveMockApi,
+			PATCH:   serveMockApi,
+			DELETE:  serveMockApi,
+		},
+	},
+}
+
+// OPTIONS http://<dynamocker-server>/mock-api
+// return mock apis
+func getOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // GET http://<dynamocker-server>/mock-api
@@ -44,7 +61,7 @@ func getMockApis(w http.ResponseWriter, r *http.Request) {
 func deleteMockApis(w http.ResponseWriter, r *http.Request) {
 	if err := mockapi.RemoveAllMockApisFiles(); err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -58,12 +75,12 @@ func getMockApi(w http.ResponseWriter, r *http.Request) {
 	if mockApiName == "" || !ok {
 		err := fmt.Errorf("no mockApiName provided")
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
 	if mockApi, err := mockapi.GetAPI(mockApiName); err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
 	} else {
 		encodeJson(mockApi, w)
@@ -79,7 +96,7 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 	if mockApiName == "" || !ok {
 		err := fmt.Errorf("no mockApiName provided in the URL")
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 	}
 
 	// return error if the mockApi already exists. Wrong method used (it should be a patch)
@@ -87,7 +104,7 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 	if slices.Contains(jsonFiles, mockApiName) {
 		err := fmt.Errorf("mockApi with name '" + mockApiName + "' already existing'")
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
 
@@ -96,14 +113,14 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err := fmt.Errorf("error while reading request body: %s", err)
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
 	}
 
 	// add mock api file to the folder
 	if err = mockapi.AddNewMockApiFile(mockApiName, body); err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -117,7 +134,7 @@ func patchMockApi(w http.ResponseWriter, r *http.Request) {
 	if mockApiName == "" || !ok {
 		err := fmt.Errorf("no mockApiName provided")
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
 
@@ -125,14 +142,14 @@ func patchMockApi(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err := fmt.Errorf("error while reading request body: %s", err)
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
 	}
 
 	if err := mockapi.ModifyMockApiFile(mockApiName, body); err != nil {
 		err := fmt.Errorf("error while modifying existing mock api: %s", err)
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -146,13 +163,70 @@ func deleteMockApi(w http.ResponseWriter, r *http.Request) {
 	if mockApiName == "" || !ok {
 		err := fmt.Errorf("no mockApiName provided")
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
+		return
 	}
 	if err := mockapi.RemoveMockApiFile(mockApiName); err != nil {
 		err := fmt.Errorf("error while removing the mocking api: %s", err)
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusNotFound)
+		encodeJsonError(err.Error(), w, http.StatusNotFound)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func serveMockApi(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	mockApiName, ok := vars["mockApiName"]
+	if mockApiName == "" || !ok {
+		err := fmt.Errorf("no mockApiName provided")
+		log.Error(err)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
+		return
+	}
+	mockApi, err := mockapi.GetAPI(mockApiName)
+	if err != nil {
+		err := fmt.Errorf("mockApi not found")
+		log.Error(err)
+		encodeJsonError(err.Error(), w, http.StatusBadRequest)
+		return
+	}
+	switch r.Method {
+	case "GET":
+		if mockApi.Responses.Get == nil {
+			err := fmt.Errorf("requested method not defined for this mockApi")
+			log.Error(err)
+			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			return
+		}
+		encodeJson(mockApi.Responses.Get, w)
+		return
+	case "POST":
+		if mockApi.Responses.Post == nil {
+			err := fmt.Errorf("requested method not defined for this mockApi")
+			log.Error(err)
+			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			return
+		}
+		encodeJson(mockApi.Responses.Post, w)
+		return
+	case "PATCH":
+		if mockApi.Responses.Patch == nil {
+			err := fmt.Errorf("requested method not defined for this mockApi")
+			log.Error(err)
+			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			return
+		}
+		encodeJson(mockApi.Responses.Patch, w)
+		return
+	case "DELETE":
+		if mockApi.Responses.Delete == nil {
+			err := fmt.Errorf("requested method not defined for this mockApi")
+			log.Error(err)
+			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			return
+		}
+		encodeJson(mockApi.Responses.Delete, w)
+		return
+	}
 }

@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { isDefined } from '@common/common';
 import { initialMockApiJson } from '@models/editor.model';
 import { IMockApi } from '@models/mockApi.model';
 import { MockApiService } from '@services/mockApiService';
+import { remove } from "lodash";
 
 @Component({
   selector: 'app-api-list-item',
@@ -34,10 +34,10 @@ export class ApiListItemComponent implements OnInit{
   mockApiResponses(): string[] {
     // create the array first, then remove items if they are not defined in the mock api
     let responses : string[] = ["GET","POST","PATCH","DELETE"]
-    if (!isDefined(this.mockApi.responses.get)) {delete responses[responses.findIndex((name: string) => {return name==="Get"})]}
-    if (!isDefined(this.mockApi.responses.post)) {delete responses[responses.findIndex((name: string) => {return name==="Post"})]}
-    if (!isDefined(this.mockApi.responses.patch)) {delete responses[responses.findIndex((name: string) => {return name==="Patch"})]}
-    if (!isDefined(this.mockApi.responses.delete)) {delete responses[responses.findIndex((name: string) => {return name==="Delete"})]}
+    if (JSON.stringify(this.mockApi.responses.get) === '{}') {remove(responses, m => {return m === "GET"})}
+    if (JSON.stringify(this.mockApi.responses.post) === '{}') {remove(responses, m => {return m === "POST"})}
+    if (JSON.stringify(this.mockApi.responses.patch) === '{}') {remove(responses, m => {return m === "PATCH"})}
+    if (JSON.stringify(this.mockApi.responses.delete) === '{}') {remove(responses, m => {return m ==="DELETE"})}
     return responses
   }
 

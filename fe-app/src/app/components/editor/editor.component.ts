@@ -1,5 +1,5 @@
 // Core
-import { AfterContentInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 // External
 import * as monaco from 'monaco-editor';
@@ -10,12 +10,12 @@ import { jqxNotificationComponent } from 'jqwidgets-ng/jqxnotification';
 // Models
 import { IMockApi } from '@models/mockApi.model';
 import { initialMockApiJson, initialMockApiJsonString, notificationLevel } from '@models/editor.model';
+import { DynamockerBackendErrorMessageI } from '@models/httpError.model';
 
 // Services
 import { EditorService } from '@services/editor';
 import { MockApiService } from '@services/mockApiService';
-import { setThrowInvalidWriteToSignalError } from '@angular/core/primitives/signals';
-import { ConsoleLogger } from '@angular/compiler-cli';
+import { HttpErrorResponse } from '@angular/common/http';
 
 
 @Component({
@@ -140,10 +140,10 @@ export class EditorComponent implements OnInit {
     }
     if (this._isSelectedMockApiNew) {
       this.mockApiService.postMockApi(this._selectedMockApi).pipe().subscribe({
-        error: (err : Error) => {
-          console.error("Could not create new MockApi: " + err)
-          this.notify("Could not create new MockApi: " + err.message, notificationLevel.error)
-        },
+        error: (err : HttpErrorResponse) => {
+          const toNotify = err.error as DynamockerBackendErrorMessageI
+          this.notify(toNotify.error_msg, notificationLevel.error)
+          },
         complete: () => {
           const msg = "MockApi succesfully created"
           this.notify(msg, notificationLevel.info)
@@ -151,13 +151,12 @@ export class EditorComponent implements OnInit {
           this.mockApiService.refreshList()
         }
       }
-      )
-    } else {
-      this.mockApiService.patchMockApi(this._selectedMockApi).pipe().subscribe({
-        error: (err : Error) => {
-          console.error("Could not modify new MockApi: " + err.message)
-          this.notify("Could not modify new MockApi: " + err.message, notificationLevel.error)
-
+    )
+  } else {
+    this.mockApiService.patchMockApi(this._selectedMockApi).pipe().subscribe({
+      error: (err : HttpErrorResponse) => {
+        const toNotify = err.error as DynamockerBackendErrorMessageI
+        this.notify(toNotify.error_msg, notificationLevel.error)
         },
         complete: () => {
           const msg = "MockAPi succesfullly modified"

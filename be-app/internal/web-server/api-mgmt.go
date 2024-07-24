@@ -23,6 +23,22 @@ func encodeJson(data any, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(data)
 }
 
+// encode the error in a JSON response and return the http status code
+// to the client
+func encodeJsonError(err string, w http.ResponseWriter, code int) {
+	if code > 500 || code < 0 {
+		code = http.StatusInternalServerError
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	// split error msg using the columns as separator, then pass the last segment as response to the client
+	errToClient := strings.Split(err, ":")
+	var jsonError = struct {
+		ErrorMsg string `json:"error_msg"`
+	}{ErrorMsg: errToClient[len(errToClient)-1]}
+	json.NewEncoder(w).Encode(jsonError)
+}
+
 func readJsonFilesFromFolder() []string {
 
 	array := []string{}

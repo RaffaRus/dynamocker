@@ -303,7 +303,7 @@ func TestPostMockApi(t *testing.T) {
 	assert.Equal(t, mockApiPost.Responses.Patch, mockApi.Responses.Patch)
 }
 
-func TestPatch(t *testing.T) {
+func TestPatchMockApi(t *testing.T) {
 	// setup server and mockApi mgmt
 	closeCh, webServerTest := setup(t)
 	defer func() { closeCh <- true }()
@@ -363,8 +363,41 @@ func TestPatch(t *testing.T) {
 	assert.Equal(t, currentMockApi.Responses.Patch, mockApi.Responses.Patch)
 }
 
-func ptr[A any](a A) *A {
-	return &a
+func TestServeMockApi(t *testing.T) {
+	// setup server and mockApi mgmt
+	closeCh, webServerTest := setup(t)
+	defer func() { closeCh <- true }()
+
+	// wait
+	time.Sleep(50 * time.Millisecond)
+
+	// write mock api
+	_, mockApi := writeDummyMockApiFile(t)
+
+	defer func() {
+		// wait
+		time.Sleep(50 * time.Millisecond)
+		removeMockApiFile(t, mockApi)
+	}()
+
+	// wait
+	time.Sleep(50 * time.Millisecond)
+
+	assert.Equal(t, 1, len(mockapi.GetAPIs()))
+
+	// generate request
+	url := mockApi.Name
+	r := httptest.NewRecorder()
+
+	// test get response of the MockApi
+	webServerTest.router.ServeHTTP(r, httptest.NewRequest("GET", url, nil))
+	assert.Equal(t, http.StatusNoContent, r.Code)
+
+	// wait
+	time.Sleep(50 * time.Millisecond)
+
+	// TODO: complete the test
+
 }
 
 func removeMockApiFile(t *testing.T, mockApi mockapi.MockApi) {
