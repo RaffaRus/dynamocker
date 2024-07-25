@@ -61,7 +61,6 @@ func dummyMockApi(t *testing.T) mockapi.MockApi {
 	return mockapi.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:       "url.com",
-		FilePath:  os.TempDir(),
 		Responses: response,
 	}
 }
@@ -70,7 +69,7 @@ func dummyMockApi(t *testing.T) mockapi.MockApi {
 // comes from os package
 func writeDummyMockApiFile(t *testing.T) (*os.File, mockapi.MockApi) {
 	mockApi := dummyMockApi(t)
-	filePath := mockApi.FilePath + "/" + mockApi.Name + ".json"
+	filePath := os.TempDir() + "/" + mockApi.Name + ".json"
 
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -296,7 +295,6 @@ func TestPostMockApi(t *testing.T) {
 	// check that the mockApi passed to the POST is equal to the one just read from the file
 	assert.Equal(t, mockApiPost.URL, mockApi.URL)
 	assert.Equal(t, mockApiPost.Name, mockApi.Name)
-	assert.Equal(t, os.TempDir(), mockApi.FilePath)
 	assert.Equal(t, mockApiPost.Responses.Get, mockApi.Responses.Get)
 	assert.Equal(t, mockApiPost.Responses.Post, mockApi.Responses.Post)
 	assert.Equal(t, mockApiPost.Responses.Delete, mockApi.Responses.Delete)
@@ -356,7 +354,6 @@ func TestPatchMockApi(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, currentMockApi.URL, mockApi.URL)
 	assert.Equal(t, currentMockApi.Name, mockApi.Name)
-	assert.Equal(t, os.TempDir(), mockApi.FilePath)
 	assert.Equal(t, currentMockApi.Responses.Get, mockApi.Responses.Get)
 	assert.Equal(t, currentMockApi.Responses.Post, mockApi.Responses.Post)
 	assert.Equal(t, currentMockApi.Responses.Delete, mockApi.Responses.Delete)
@@ -402,7 +399,7 @@ func TestServeMockApi(t *testing.T) {
 
 func removeMockApiFile(t *testing.T, mockApi mockapi.MockApi) {
 
-	filename := mockApi.FilePath + "/" + mockApi.Name + ".json"
+	filename := os.TempDir() + "/" + mockApi.Name + ".json"
 	_, err := os.Stat(filename)
 	if err == nil {
 		err = os.Remove(filename)

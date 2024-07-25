@@ -20,7 +20,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	// add valid mock api
 	api := dummyMockApi(t)
 	defer func() {
-		filename := api.FilePath + "/" + api.Name
+		filename := folderPath + "/" + api.Name
 		_, err := os.Stat(filename)
 		if err == nil {
 			err = os.Remove(filename)
@@ -107,7 +107,7 @@ func TestModifyMockApiFile(t *testing.T) {
 	folderPath = os.TempDir()
 	api := dummyMockApi(t)
 	defer func() {
-		filename := api.FilePath + "/" + api.Name + ".json"
+		filename := folderPath + "/" + api.Name + ".json"
 		_, err := os.Stat(filename)
 		if err == nil {
 			err = os.Remove(filename)
@@ -147,7 +147,7 @@ func TestModifyMockApiFile(t *testing.T) {
 	assert.Nil(t, ModifyMockApiFile(newApi.Name, newBytes))
 
 	// check it was modified
-	filename := newApi.FilePath + "/" + newApi.Name
+	filename := folderPath + "/" + newApi.Name
 	filebytes, err := os.ReadFile(filename + ".json")
 	if err != nil {
 		t.Fatalf("error file not read :%s", err)

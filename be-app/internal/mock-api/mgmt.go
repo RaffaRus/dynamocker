@@ -95,7 +95,6 @@ func loadAPIsFromFolder() (err error) {
 			log.Errorf("error while unmarshaling the json file %s into the struct: %s", pathToFile, err)
 			continue
 		}
-		mockApi.FilePath = folderPath
 
 		// validate content
 		vtor := validator.New(validator.WithRequiredStructEnabled())
@@ -142,6 +141,15 @@ func GetAPI(key string) (*MockApi, error) {
 		return nil, err
 	}
 	return mockApi, nil
+}
+
+func MatchUrl(url string) (*MockApi, bool) {
+	for _, mockApi := range mockApiList {
+		if mockApi.URL == url {
+			return mockApi, true
+		}
+	}
+	return nil, false
 }
 
 func observeFolder(closeAll chan bool, wg *sync.WaitGroup) {
@@ -288,6 +296,12 @@ func detectedNewMockApi(pathToFile string) {
 		}
 		log.Debug("mock api named '", mockApi.Name, "' is different. Removing the old one and adding the new one to the list")
 		detectedRemovedMockApi(pathToFile)
+	}
+
+	// check the URL is not duplicated
+	if matchedMockApi, found := MatchUrl(mockApi.URL); found {
+		log.Errorf("mockApi '%s' duplicates the URL of the mockApi '%s'. MockApi %s not loaded", mockApi.Name, mockApi.Name, matchedMockApi.Name)
+		return
 	}
 
 	mockApi.Name = fileName

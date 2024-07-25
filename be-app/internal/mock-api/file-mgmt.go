@@ -33,9 +33,6 @@ func AddNewMockApiFile(fileName string, body []byte) error {
 		return err
 	}
 
-	// add 'FilePath'
-	mockApi.FilePath = folderPath
-
 	// validate body
 	vtor := validator.New(validator.WithRequiredStructEnabled())
 	vtorErr := vtor.Struct(mockApi)

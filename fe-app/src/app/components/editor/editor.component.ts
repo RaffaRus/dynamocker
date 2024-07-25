@@ -127,7 +127,8 @@ export class EditorComponent implements OnInit {
             "name",
             "url",
             "responses"
-          ]
+          ],
+          "additionalProperties": false
         }
       }
     ]
@@ -149,6 +150,7 @@ export class EditorComponent implements OnInit {
           this.notify(msg, notificationLevel.info)
           this.editorService.unsavedModifications = false
           this.mockApiService.refreshList()
+          this._isSelectedMockApiNew = false
         }
       }
     )

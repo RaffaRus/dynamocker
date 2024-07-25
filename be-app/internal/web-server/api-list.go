@@ -32,7 +32,7 @@ var apis []Api = []Api{
 		},
 	},
 	{
-		resource: "serve-mock-api/{mockApiName}",
+		resource: "serve-mock-api/{url}",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
 			GET:     serveMockApi,
 			OPTIONS: getOptions,
@@ -176,54 +176,57 @@ func deleteMockApi(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveMockApi(w http.ResponseWriter, r *http.Request) {
+	// retrieve the url
 	vars := mux.Vars(r)
-	mockApiName, ok := vars["mockApiName"]
-	if mockApiName == "" || !ok {
+	mockApiUrl, ok := vars["url"]
+	if mockApiUrl == "" || !ok {
 		err := fmt.Errorf("no mockApiName provided")
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
-	mockApi, err := mockapi.GetAPI(mockApiName)
-	if err != nil {
+
+	// find the mockApi mathching the url
+	mockApi, found := mockapi.MatchUrl(mockApiUrl)
+	if !found {
 		err := fmt.Errorf("mockApi not found")
 		log.Error(err)
-		encodeJsonError(err.Error(), w, http.StatusBadRequest)
+		encodeJsonError(err.Error(), w, http.StatusNotFound)
 		return
 	}
 	switch r.Method {
 	case "GET":
-		if mockApi.Responses.Get == nil {
+		if len(*mockApi.Responses.Get) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
-			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			encodeJsonError(err.Error(), w, http.StatusNotFound)
 			return
 		}
 		encodeJson(mockApi.Responses.Get, w)
 		return
 	case "POST":
-		if mockApi.Responses.Post == nil {
+		if len(*mockApi.Responses.Post) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
-			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			encodeJsonError(err.Error(), w, http.StatusNotFound)
 			return
 		}
 		encodeJson(mockApi.Responses.Post, w)
 		return
 	case "PATCH":
-		if mockApi.Responses.Patch == nil {
+		if len(*mockApi.Responses.Patch) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
-			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			encodeJsonError(err.Error(), w, http.StatusNotFound)
 			return
 		}
 		encodeJson(mockApi.Responses.Patch, w)
 		return
 	case "DELETE":
-		if mockApi.Responses.Delete == nil {
+		if len(*mockApi.Responses.Delete) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
-			encodeJsonError(err.Error(), w, http.StatusBadRequest)
+			encodeJsonError(err.Error(), w, http.StatusNotFound)
 			return
 		}
 		encodeJson(mockApi.Responses.Delete, w)

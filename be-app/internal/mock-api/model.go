@@ -11,9 +11,6 @@ type MockApi struct {
 	// url where this MockApi will be served
 	URL string `json:"url" validate:"required"`
 
-	// path where the file is stored, without the file name
-	FilePath string `json:"filePath" validate:"dir,required"`
-
 	Responses Response `json:"responses" validate:"required"`
 }
 

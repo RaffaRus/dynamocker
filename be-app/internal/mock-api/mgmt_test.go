@@ -41,7 +41,6 @@ func dummyMockApi(t *testing.T) MockApi {
 	return MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:       "url.com",
-		FilePath:  os.TempDir(),
 		Responses: response,
 	}
 }
@@ -66,7 +65,6 @@ func dummyMockApiArray(t *testing.T) []*MockApi {
 			&MockApi{
 				Name:      fmt.Sprintf("dummy-mock-api-%d", i),
 				URL:       "url.com",
-				FilePath:  os.TempDir(),
 				Responses: response,
 			})
 	}
@@ -362,7 +360,6 @@ func TestObserveFolder(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, mockApi.Name, retrievedMockApi.Name)
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
-	assert.Equal(t, mockApi.FilePath, retrievedMockApi.FilePath)
 	assert.Equal(t, mockApi.Responses.Get, retrievedMockApi.Responses.Get)
 	assert.Equal(t, mockApi.Responses.Patch, retrievedMockApi.Responses.Patch)
 	assert.Equal(t, mockApi.Responses.Post, retrievedMockApi.Responses.Post)
@@ -410,7 +407,6 @@ func TestObserveFolder(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, mockApi.Name, retrievedMockApi.Name)
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
-	assert.Equal(t, mockApi.FilePath, retrievedMockApi.FilePath)
 	assert.Equal(t, mockApi.Responses.Get, retrievedMockApi.Responses.Get)
 	assert.Equal(t, mockApi.Responses.Patch, retrievedMockApi.Responses.Patch)
 	assert.Equal(t, mockApi.Responses.Post, retrievedMockApi.Responses.Post)
