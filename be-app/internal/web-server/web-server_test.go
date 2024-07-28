@@ -3,6 +3,7 @@ package webserver
 import (
 	"bytes"
 	mockapi "dynamocker/internal/mock-api"
+	mockapipkg "dynamocker/internal/mock-api"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -107,12 +108,23 @@ func TestGetMockApi(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	// test get/{id} api
+	// get uuid of the mockApi
+	uuid, found := mockapipkg.GetUuid(&mockApi)
+	if !found {
+		t.Fatal("uuid not recoverable")
+	}
+
+	// test get/{uuid} api
 	r := httptest.NewRecorder()
-	url := "/dynamocker/api/mock-api/" + mockApi.Name
+	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid)
 	webServerTest.router.ServeHTTP(r, httptest.NewRequest("GET", url, nil))
 	assert.Equal(t, http.StatusOK, r.Code)
-	bytesMockApi, err := json.Marshal(mockApi)
+	resObj := ResourceObject{
+		ObjId:   uuid,
+		ObjType: MockApiType,
+		ObtData: mockApi,
+	}
+	resObjBytes, err := json.Marshal(resObj)
 	if err != nil {
 		t.Fatalf("error while marshaling mockApi: %s", err)
 	}
@@ -120,7 +132,7 @@ func TestGetMockApi(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error while reading from response body: %s", err)
 	}
-	assert.Equal(t, append(bytesMockApi, []byte("\n")...), bytesResp)
+	assert.Equal(t, append(resObjBytes, []byte("\n")...), bytesResp)
 }
 
 func TestGetMockApis(t *testing.T) {
@@ -158,12 +170,12 @@ func TestGetMockApis(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error while reading from response body: %s", err)
 	}
-	var mockApisResp []mockapi.MockApi
-	err = json.Unmarshal(bytesResp, &mockApisResp)
+	var resObjResp []ResourceObject
+	err = json.Unmarshal(bytesResp, &resObjResp)
 	if err != nil {
 		t.Fatalf("error while unmatshalling the response: %s", err)
 	}
-	assert.Equal(t, 3, len(mockApisResp))
+	assert.Equal(t, 3, len(resObjResp))
 }
 
 func TestDeleteMockApis(t *testing.T) {
@@ -200,7 +212,7 @@ func TestDeleteMockApis(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	assert.Zero(t, len(mockapi.GetAPIs()))
+	assert.Zero(t, len(mockapi.GetMockAPIs()))
 }
 
 func TestDeleteMockApi(t *testing.T) {
@@ -228,8 +240,14 @@ func TestDeleteMockApi(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
+	// get uuid of the mockApi
+	uuid, found := mockapipkg.GetUuid(&mockApi1)
+	if !found {
+		t.Fatal("uuid not recoverable")
+	}
+
 	// test delete api
-	url := "/dynamocker/api/mock-api/" + mockApi2.Name
+	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid)
 	r := httptest.NewRecorder()
 	webServerTest.router.ServeHTTP(r, httptest.NewRequest("DELETE", url, nil))
 	assert.Equal(t, http.StatusNoContent, r.Code)
@@ -237,7 +255,7 @@ func TestDeleteMockApi(t *testing.T) {
 	// wait
 	time.Sleep(100 * time.Millisecond)
 
-	assert.Equal(t, 2, len(mockapi.GetAPIs()))
+	assert.Equal(t, 2, len(mockapi.GetMockApiList()))
 }
 
 func TestPostMockApi(t *testing.T) {
@@ -259,7 +277,7 @@ func TestPostMockApi(t *testing.T) {
 	}
 
 	// POST request
-	postReqUrl := "/dynamocker/api/mock-api/" + mockApiPost.Name
+	postReqUrl := "/dynamocker/api/mock-api"
 	webServerTest.router.ServeHTTP(r, httptest.NewRequest("POST", postReqUrl, bytes.NewBuffer(bytesPost)))
 
 	// check status code
@@ -301,7 +319,7 @@ func TestPostMockApi(t *testing.T) {
 	assert.Equal(t, mockApiPost.Responses.Patch, mockApi.Responses.Patch)
 }
 
-func TestPatchMockApi(t *testing.T) {
+func TestPutMockApi(t *testing.T) {
 	// setup server and mockApi mgmt
 	closeCh, webServerTest := setup(t)
 	defer func() { closeCh <- true }()
@@ -321,9 +339,17 @@ func TestPatchMockApi(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	assert.Equal(t, 1, len(mockapi.GetAPIs()))
+	assert.Equal(t, 1, len(mockapi.GetMockApiList()))
+
+	uuid, found := mockapipkg.GetUuid(&mockApi)
+	if !found {
+		t.Fatalf("uuid not found")
+	}
+	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid)
+	r := httptest.NewRecorder()
 
 	// test patch api
+	mockApi.Name = "new_name"
 	mockApi.URL = "new-url.it"
 	if json.Unmarshal([]byte(`{"new_get":true,"body":"new response"}`), &mockApi.Responses.Get) != nil {
 		t.Fatalf("error while unmarshalling")
@@ -334,24 +360,23 @@ func TestPatchMockApi(t *testing.T) {
 	if json.Unmarshal([]byte(`{"new_post":1,"success":true}`), &mockApi.Responses.Post) != nil {
 		t.Fatalf("error while unmarshalling")
 	}
+	mockApi.Responses.Patch = nil
 	if json.Unmarshal([]byte(`{"patched":"yes","id":3}`), &mockApi.Responses.Patch) != nil {
 		t.Fatalf("error while unmarshalling")
 	}
-	url := "/dynamocker/api/mock-api/" + mockApi.Name
-	r := httptest.NewRecorder()
 	bytesPatch, err := json.Marshal(mockApi)
 	if err != nil {
 		t.Fatalf("error while marshalign object : %s", err)
 	}
-	webServerTest.router.ServeHTTP(r, httptest.NewRequest("PATCH", url, bytes.NewBuffer(bytesPatch)))
+	webServerTest.router.ServeHTTP(r, httptest.NewRequest("PUT", url, bytes.NewBuffer(bytesPatch)))
 	assert.Equal(t, http.StatusNoContent, r.Code)
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
 	// check that the mockApi has been modified
-	currentMockApi, err := mockapi.GetAPI(mockApi.Name)
-	assert.Nil(t, err)
+	currentMockApi, found := mockapi.GetApiByName(mockApi.Name)
+	assert.True(t, found)
 	assert.Equal(t, currentMockApi.URL, mockApi.URL)
 	assert.Equal(t, currentMockApi.Name, mockApi.Name)
 	assert.Equal(t, currentMockApi.Responses.Get, mockApi.Responses.Get)
@@ -380,7 +405,7 @@ func TestServeMockApi(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	assert.Equal(t, 1, len(mockapi.GetAPIs()))
+	assert.Equal(t, 1, len(mockapi.GetMockApiList()))
 
 	// generate request
 	url := mockApi.Name

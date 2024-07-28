@@ -54,9 +54,9 @@ export class MockApiService {
         return this.httpClient.post<null>(url, JSON.stringify(mockApi))
     }
     
-    patchMockApi(mockApi : IMockApi) : Observable<null> {
+    putMockApi(mockApi : IMockApi) : Observable<null> {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.name
-        return this.httpClient.patch<null>(url, JSON.stringify(mockApi))
+        return this.httpClient.put<null>(url, JSON.stringify(mockApi))
     }
 
 }

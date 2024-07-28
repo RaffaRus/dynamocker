@@ -1,4 +1,4 @@
-package mockapi
+package mockapipkg
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	reset(t)
 
 	// add file while folderpath == ""
-	assert.EqualError(t, AddNewMockApiFile("", []byte{}), "the mock API folder has not been set-up")
+	assert.EqualError(t, AddNewMockApiFile([]byte{}), "the mock API folder has not been set-up")
 
 	// set mock api folder as a temp folder
 	folderPath = os.TempDir()
@@ -33,10 +33,10 @@ func TestAddNewMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error while marshaling dummy mock api :%s", err)
 	}
-	assert.Nil(t, AddNewMockApiFile(api.Name, bytes))
+	assert.Nil(t, AddNewMockApiFile(bytes))
 
 	// add invalid json
-	assert.EqualError(t, AddNewMockApiFile("", []byte("invalid json")), "error while unmarshaling body: invalid character 'i' looking for beginning of value")
+	assert.EqualError(t, AddNewMockApiFile([]byte("invalid json")), "error while unmarshaling body: invalid character 'i' looking for beginning of value")
 
 	// add struct with no Name
 	invalidStruct := dummyMockApi(t)
@@ -45,7 +45,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("error while marshaling struct")
 	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Name' Error:Field validation for 'Name' failed on the 'required' tag")
+	assert.EqualError(t, AddNewMockApiFile(bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Name' Error:Field validation for 'Name' failed on the 'required' tag")
 
 	// add struct with no URL
 	invalidStruct = dummyMockApi(t)
@@ -54,7 +54,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("error while marshaling struct")
 	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.URL' Error:Field validation for 'URL' failed on the 'required' tag")
+	assert.EqualError(t, AddNewMockApiFile(bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.URL' Error:Field validation for 'URL' failed on the 'required' tag")
 
 	// add struct with no Response
 	invalidStruct = dummyMockApi(t)
@@ -63,7 +63,7 @@ func TestAddNewMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("error while marshaling struct")
 	}
-	assert.EqualError(t, AddNewMockApiFile("", bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Responses' Error:Field validation for 'Responses' failed on the 'required' tag")
+	assert.EqualError(t, AddNewMockApiFile(bytes), "invalid mock api passed from post request: %!s(<nil>)\nKey: 'MockApi.Responses' Error:Field validation for 'Responses' failed on the 'required' tag")
 
 }
 
@@ -71,7 +71,7 @@ func TestRemoveMockApiFile(t *testing.T) {
 	reset(t)
 
 	// remove file while folderpath == ""
-	assert.EqualError(t, RemoveMockApiFile(""), "the mock API folder has not been set-up")
+	assert.EqualError(t, RemoveMockApiFile(0), "the mock API folder has not been set-up")
 
 }
 
@@ -120,7 +120,13 @@ func TestModifyMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error while marshaling dummy mock api :%s", err)
 	}
-	assert.Nil(t, AddNewMockApiFile(api.Name, bytes))
+	assert.Nil(t, AddNewMockApiFile(bytes))
+
+	uuid, found := GetUuid(&api)
+	// TODO: fix problem with the fact that put induces a removal of the mockApi, and the mockApi to be removed is
+	// found using the uuid, but the uuid is managed by the mgmt, not file-mgmt.
+	// One solutions would be to let the file-mgmt handle the id
+	assert.True(t, found)
 
 	// modify it
 	var newApi MockApi
@@ -128,7 +134,11 @@ func TestModifyMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("errror while unmarshaling : %s", err)
 	}
-	if json.Unmarshal([]byte(`{"new_json":true,"new_body":"a new response"}`), newApi.Responses.Get) != nil {
+	// newApi.Responses.Get = nil
+	// newApi.Responses.Post = nil
+	// newApi.Responses.Delete = nil
+	// newApi.Responses.Patch = nil
+	if err = json.Unmarshal([]byte(`{"new_json":true,"new_body":"a new response"}`), newApi.Responses.Get); err != nil {
 		t.Fatal("error while unmarshalling")
 	}
 	if json.Unmarshal([]byte(`{"this_is":4}`), newApi.Responses.Patch) != nil {
@@ -144,7 +154,7 @@ func TestModifyMockApiFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error while marshaling dummy mock api :%s", err)
 	}
-	assert.Nil(t, ModifyMockApiFile(newApi.Name, newBytes))
+	assert.Nil(t, ModifyMockApiFile(uuid, newBytes))
 
 	// check it was modified
 	filename := folderPath + "/" + newApi.Name

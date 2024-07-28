@@ -155,7 +155,7 @@ export class EditorComponent implements OnInit {
       }
     )
   } else {
-    this.mockApiService.patchMockApi(this._selectedMockApi).pipe().subscribe({
+    this.mockApiService.putMockApi(this._selectedMockApi).pipe().subscribe({
       error: (err : HttpErrorResponse) => {
         const toNotify = err.error as DynamockerBackendErrorMessageI
         this.notify(toNotify.error_msg, notificationLevel.error)

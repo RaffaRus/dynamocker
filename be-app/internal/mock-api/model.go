@@ -1,8 +1,8 @@
-package mockapi
+package mockapipkg
+
+const _max_size_mockapi_list = 65535
 
 // Structure used to model the MockApi.
-//
-//	TODO: add mocking payload
 type MockApi struct {
 
 	// name of the file without the path and the json suffix

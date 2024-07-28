@@ -1,4 +1,4 @@
-package mockapi
+package mockapipkg
 
 import (
 	"encoding/json"
@@ -12,11 +12,10 @@ import (
 )
 
 var mu sync.Mutex
-var mockApiList = make(map[string]*MockApi)
 var folderPath = ""
 
 // it must act on the file. observer will do its job
-func AddNewMockApiFile(fileName string, body []byte) error {
+func AddNewMockApiFile(body []byte) error {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -48,8 +47,18 @@ func AddNewMockApiFile(fileName string, body []byte) error {
 		}
 	}
 
+	// check if a mockApi with the same name or URL already exists
+	_, found := GetApiByName(mockApi.Name)
+	if found {
+		return fmt.Errorf("found another file using same name of the one to be added ('%s'). File %s not created", mockApi.Name, err)
+	}
+	_, found = GetApiByUrl(mockApi.Name)
+	if found {
+		return fmt.Errorf("found another file using same URL of the one to be added ('%s'). File %s not created", mockApi.URL, err)
+	}
+
 	// retrieve file path
-	filePath := folderPath + "/" + fileName + ".json"
+	filePath := folderPath + "/" + mockApi.Name + ".json"
 
 	// transform mockApi into []byte
 	bytes, err := json.Marshal(mockApi)
@@ -66,7 +75,7 @@ func AddNewMockApiFile(fileName string, body []byte) error {
 }
 
 // it must act on the file. observer will do its job
-func RemoveMockApiFile(fileName string) error {
+func RemoveMockApiFile(uuid uint16) error {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -75,7 +84,11 @@ func RemoveMockApiFile(fileName string) error {
 		return fmt.Errorf("the mock API folder has not been set-up")
 	}
 
-	filePath := folderPath + "/" + fileName + ".json"
+	mockApi, found := mockApiList[uuid]
+	if !found {
+		return fmt.Errorf("no mockApi found with the given uuid (%d)", uuid)
+	}
+	filePath := folderPath + "/" + mockApi.Name + ".json"
 
 	if err := os.Remove(filePath); err != nil {
 		return fmt.Errorf("file %s not removed: %s", filePath, err)
@@ -120,13 +133,13 @@ func RemoveAllMockApisFiles() error {
 }
 
 // it must act on the file. observer will do its job
-func ModifyMockApiFile(fileName string, newFile []byte) error {
+func ModifyMockApiFile(mockApiUuid uint16, newFile []byte) error {
 
-	if err := RemoveMockApiFile(fileName); err != nil {
+	if err := RemoveMockApiFile(mockApiUuid); err != nil {
 		return err
 	}
 
-	if err := AddNewMockApiFile(fileName, newFile); err != nil {
+	if err := AddNewMockApiFile(newFile); err != nil {
 		return err
 	}
 

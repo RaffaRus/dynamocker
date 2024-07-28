@@ -1,4 +1,4 @@
-package mockapi
+package mockapipkg
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ const observeFolderWitingTimeMilliseconds = 200
 
 // reset package map and folderPath variable
 func reset(t *testing.T) {
-	mockApiList = make(map[string]*MockApi)
+	mockApiList = make(map[uint16]*MockApi)
 	folderPath = ""
 	assert.Equal(t, 0, len(mockApiList))
 }
@@ -165,42 +165,42 @@ func TestLoadStoredAPIs(t *testing.T) {
 	// check that the apis have been loaded
 	assert.Nil(t, loadAPIsFromFolder(), "the function should return no error")
 	mockApiFileName, _ := strings.CutSuffix(path.Base(dummyMockApiFile.Name()), ".json")
-	_, ok := mockApiList[mockApiFileName]
-	assert.True(t, ok)
+	_, found := GetApiByName(mockApiFileName)
+	assert.True(t, found)
 }
 
 func TestGetAPIs(t *testing.T) {
 	reset(t)
-	assert.Empty(t, GetAPIs(), "GetAPIs() should return empty array")
+	assert.Empty(t, GetMockAPIs(), "GetAPIs() should return empty array")
 
 	// add apis to the map and check length
 	mockApis := dummyMockApiArray(t)
 	for i := 0; i < 5; i++ {
-		mockApiList[mockApis[i].Name] = mockApis[i]
+		addMockApiToMap(*mockApis[i])
 	}
-	assert.Equal(t, 5, len(GetAPIs()))
+	assert.Equal(t, 5, len(GetMockAPIs()))
 
 	// remove apis from the map and check it is empty
 	reset(t)
-	assert.Equal(t, 0, len(GetAPIs()))
+	assert.Equal(t, 0, len(GetMockAPIs()))
 
 }
 
 func TestGetAPI(t *testing.T) {
 	reset(t)
-
 	// check not-existing key
 	key := "api"
-	_, err := GetAPI(key)
-	assert.Equal(t, err, fmt.Errorf("requested mockApi %s has not been found", key))
+	_, found := GetApiByName(key)
+	assert.False(t, found)
 
 	// add mock api to the map
 	mockApi := dummyMockApi(t)
-	mockApiList[mockApi.Name] = &mockApi
+	uuid := generateUuid()
+	mockApiList[uuid] = &mockApi
 
 	// check the get works
-	res, err := GetAPI(mockApi.Name)
-	assert.Nil(t, err)
+	res, found := GetApiByName(mockApi.Name)
+	assert.True(t, found)
 	assert.Equal(t, *res, mockApi)
 }
 
@@ -356,8 +356,8 @@ func TestObserveFolder(t *testing.T) {
 
 	// check the mock api has been loaded
 	assert.Equal(t, 1, len(mockApiList))
-	retrievedMockApi, ok := mockApiList[mockApi.Name]
-	assert.True(t, ok)
+	retrievedMockApi, found := GetApiByName(mockApi.Name)
+	assert.True(t, found)
 	assert.Equal(t, mockApi.Name, retrievedMockApi.Name)
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
 	assert.Equal(t, mockApi.Responses.Get, retrievedMockApi.Responses.Get)
@@ -403,8 +403,8 @@ func TestObserveFolder(t *testing.T) {
 
 	// check the mock api has been modified
 	assert.Equal(t, 1, len(mockApiList))
-	retrievedMockApi, ok = mockApiList[mockApi.Name]
-	assert.True(t, ok)
+	retrievedMockApi, found = GetApiByName(mockApi.Name)
+	assert.True(t, found)
 	assert.Equal(t, mockApi.Name, retrievedMockApi.Name)
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
 	assert.Equal(t, mockApi.Responses.Get, retrievedMockApi.Responses.Get)
@@ -420,8 +420,8 @@ func TestObserveFolder(t *testing.T) {
 
 	// check the mock api has been removed
 	assert.Equal(t, 0, len(mockApiList))
-	_, ok = mockApiList[mockApi.Name]
-	assert.False(t, ok)
+	_, found = GetUuid(&mockApi)
+	assert.False(t, found)
 
 }
 
@@ -477,8 +477,9 @@ func TestDetectAlreadyExistingMockApi(t *testing.T) {
 	reset(t)
 
 	// add mock api to the map
+	uuid := generateUuid()
 	mockApi := dummyMockApi(t)
-	mockApiList[mockApi.Name] = &mockApi
+	mockApiList[uuid] = &mockApi
 
 	assert.True(t, reflect.DeepEqual(mockApi, mockApi))
 
@@ -519,3 +520,23 @@ func TestDetectAlreadyExistingMockApi(t *testing.T) {
 	assert.False(t, reflect.DeepEqual(mockApiDifferentDeleteResponse, mockApi))
 
 }
+
+// func TestGenerateUuid(t *testing.T) {
+// 	// TODO compelte test
+// }
+
+// func TestGetApiByName(t *testing.T) {
+// 	// TODO compelte test
+// }
+
+// func TestGetApiByUrl(t *testing.T) {
+// 	// TODO compelte test
+// }
+
+// func TestGetUuid(t *testing.T) {
+// 	// TODO compelte test
+// }
+
+// func TestAddMockApiToMap(t *testing.T) {
+// 	// TODO compelte test
+// }

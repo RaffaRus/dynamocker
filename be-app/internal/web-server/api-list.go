@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -13,6 +13,13 @@ import (
 
 // list of apis
 var apis []Api = []Api{
+	{
+		resource: "mock-api",
+		handler: map[Method]func(http.ResponseWriter, *http.Request){
+			POST:    postMockApi,
+			OPTIONS: getOptions,
+		},
+	},
 	{
 		resource: "mock-apis",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
@@ -22,12 +29,11 @@ var apis []Api = []Api{
 		},
 	},
 	{
-		resource: "mock-api/{id}",
+		resource: "mock-api/{uuid}",
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
 			GET:     getMockApi,
 			OPTIONS: getOptions,
-			POST:    postMockApi,
-			PATCH:   patchMockApi,
+			PUT:     putMockApi,
 			DELETE:  deleteMockApi,
 		},
 	},
@@ -53,7 +59,12 @@ func getOptions(w http.ResponseWriter, r *http.Request) {
 // GET http://<dynamocker-server>/mock-api
 // return mock apis
 func getMockApis(w http.ResponseWriter, r *http.Request) {
-	encodeJson(mockapi.GetAPIs(), w)
+	mockApis := mockapi.GetMockApiList()
+	var resourceObjects []ResourceObject = make([]ResourceObject, 0)
+	for uuid, mockApi := range mockApis {
+		resourceObjects = append(resourceObjects, ResourceObject{ObjId: uuid, ObjType: MockApiArrayType, ObtData: mockApi})
+	}
+	encodeJson(resourceObjects, w)
 }
 
 // DEL http://<dynamocker-server>/mock-api
@@ -67,46 +78,37 @@ func deleteMockApis(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GET http://<dynamocker-server>/mock-api/{id}
-// get mock api by id
+// GET http://<dynamocker-server>/mock-api/{uuid}
+// get mock api by uuid
 func getMockApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	mockApiName, ok := vars["id"]
-	if mockApiName == "" || !ok {
-		err := fmt.Errorf("no mockApiName provided")
+	mockApiUuidString, ok := vars["uuid"]
+	if mockApiUuidString == "" || !ok {
+		err := fmt.Errorf("no uuid provided")
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
-	if mockApi, err := mockapi.GetAPI(mockApiName); err != nil {
+	mockApiUuid64, err := strconv.ParseUint(mockApiUuidString, 10, 16)
+	if err != nil {
+		err := fmt.Errorf("error while parsing uuid into uint16")
+		log.Error(err)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
+		return
+	}
+	mockApiUuid := uint16(mockApiUuid64)
+	if mockApi, err := mockapi.GetMockAPI(mockApiUuid); err != nil {
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
 	} else {
-		encodeJson(mockApi, w)
+		encodeJson(ResourceObject{ObjId: mockApiUuid, ObjType: MockApiType, ObtData: mockApi}, w)
 	}
 }
 
-// POST http://<dynamocker-server>/mock-api/{id}
+// PUT http://<dynamocker-server>/mock-api
 // add mock api
 func postMockApi(w http.ResponseWriter, r *http.Request) {
-	// retrieve id
-	vars := mux.Vars(r)
-	mockApiName, ok := vars["id"]
-	if mockApiName == "" || !ok {
-		err := fmt.Errorf("no mockApiName provided in the URL")
-		log.Error(err)
-		encodeJsonError(err.Error(), w, http.StatusBadRequest)
-	}
-
-	// return error if the mockApi already exists. Wrong method used (it should be a patch)
-	jsonFiles := readJsonFilesFromFolder()
-	if slices.Contains(jsonFiles, mockApiName) {
-		err := fmt.Errorf("mockApi with name '" + mockApiName + "' already existing'")
-		log.Error(err)
-		encodeJsonError(err.Error(), w, http.StatusBadRequest)
-		return
-	}
 
 	// load body
 	body, err := io.ReadAll(r.Body)
@@ -118,7 +120,7 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add mock api file to the folder
-	if err = mockapi.AddNewMockApiFile(mockApiName, body); err != nil {
+	if err = mockapi.AddNewMockApiFile(body); err != nil {
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
 		return
@@ -126,17 +128,26 @@ func postMockApi(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// PATCH http://<dynamocker-server>/mock-api/{id}
+// PUT http://<dynamocker-server>/mock-api/{uuid}
 // modify existing mock api
-func patchMockApi(w http.ResponseWriter, r *http.Request) {
+func putMockApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	mockApiName, ok := vars["id"]
-	if mockApiName == "" || !ok {
-		err := fmt.Errorf("no mockApiName provided")
+	mockApiUuidString, ok := vars["uuid"]
+	if mockApiUuidString == "" || !ok {
+		err := fmt.Errorf("no uuid provided")
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
+
+	mockApiUuid64, err := strconv.ParseUint(mockApiUuidString, 10, 16)
+	if err != nil {
+		err := fmt.Errorf("error while parsing uuid into uint16")
+		log.Error(err)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
+		return
+	}
+	mockApiUuid := uint16(mockApiUuid64)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -146,7 +157,7 @@ func patchMockApi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := mockapi.ModifyMockApiFile(mockApiName, body); err != nil {
+	if err := mockapi.ModifyMockApiFile(mockApiUuid, body); err != nil {
 		err := fmt.Errorf("error while modifying existing mock api: %s", err)
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusBadRequest)
@@ -155,18 +166,28 @@ func patchMockApi(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// DEL http://<dynamocker-server>/mock-api/{id}
+// DEL http://<dynamocker-server>/mock-api/{uuid}
 // delete mock api
 func deleteMockApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	mockApiName, ok := vars["id"]
-	if mockApiName == "" || !ok {
-		err := fmt.Errorf("no mockApiName provided")
+	mockApiUuidString, ok := vars["uuid"]
+	if mockApiUuidString == "" || !ok {
+		err := fmt.Errorf("no uuid provided")
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusBadRequest)
 		return
 	}
-	if err := mockapi.RemoveMockApiFile(mockApiName); err != nil {
+
+	mockApiUuid64, err := strconv.ParseUint(mockApiUuidString, 10, 16)
+	if err != nil {
+		err := fmt.Errorf("error while parsing uuid into uint16")
+		log.Error(err)
+		encodeJsonError(err.Error(), w, http.StatusInternalServerError)
+		return
+	}
+	mockApiUuid := uint16(mockApiUuid64)
+
+	if err := mockapi.RemoveMockApiFile(mockApiUuid); err != nil {
 		err := fmt.Errorf("error while removing the mocking api: %s", err)
 		log.Error(err)
 		encodeJsonError(err.Error(), w, http.StatusNotFound)
@@ -187,7 +208,7 @@ func serveMockApi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// find the mockApi mathching the url
-	mockApi, found := mockapi.MatchUrl(mockApiUrl)
+	mockApi, found := mockapi.GetApiByUrl(mockApiUrl)
 	if !found {
 		err := fmt.Errorf("mockApi not found")
 		log.Error(err)

@@ -1,4 +1,4 @@
-package mockapi
+package mockapipkg
 
 import (
 	"dynamocker/internal/config"
@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"os"
 	"path"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,9 +19,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// TODO: improve the way the mockapi are handled:
+// 	- the uniqueness of the uuid is ensured by the map construct whose key is the uuid
+// 	- the uniqueness of the name and of the url is checked with a for cycle O(N)*2 --> this must be improved
+
+var mockApiList = make(map[uint16]*MockApi)
+
 func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 
-	mockApiList = make(map[string]*MockApi)
+	mockApiList = make(map[uint16]*MockApi)
 	folderPath = config.GetMockApiFolder()
 
 	// load the stored APIs for the first time
@@ -67,13 +73,6 @@ func loadAPIsFromFolder() (err error) {
 
 		pathToFile := folderPath + "/" + file.Name()
 
-		// get fileName
-		fileName, ok := strings.CutSuffix(file.Name(), ".json")
-		if !ok {
-			log.Error("suffix '.json' not found in the ", pathToFile, " file")
-			continue
-		}
-
 		// open file
 		jsonFile, err := os.Open(pathToFile)
 		if err != nil {
@@ -104,28 +103,13 @@ func loadAPIsFromFolder() (err error) {
 			continue
 		}
 
-		// check if it already exists
-		if savedMockApi, ok := mockApiList[mockApi.Name]; ok {
-			log.Debug("found another mock api named '", mockApi.Name, "'. Comparing the old one with the new one")
-			if reflect.DeepEqual(mockApi, *savedMockApi) {
-				log.Debug("mock api named '", mockApi.Name, "' is a duplicate. No action needed")
-				continue
-			}
-			log.Debug("mock api named '", mockApi.Name, "' is different. Removing the old one and adding the new one to the list")
-			delete(mockApiList, mockApi.Name)
-		}
-
-		// add mockApi to the list
-		mockApi.Name = fileName
-		mockApiList[fileName] = &mockApi
-
-		log.Info("loaded '", fileName, "' mock API")
+		addMockApiToMap(mockApi)
 	}
 
 	return nil
 }
 
-func GetAPIs() []*MockApi {
+func GetMockAPIs() []*MockApi {
 	ret := make([]*MockApi, 0)
 	for _, mockApi := range mockApiList {
 		ret = append(ret, mockApi)
@@ -133,23 +117,94 @@ func GetAPIs() []*MockApi {
 	return ret
 }
 
-func GetAPI(key string) (*MockApi, error) {
-	mockApi, ok := mockApiList[key]
-	if !ok {
-		err := fmt.Errorf("requested mockApi %s has not been found", key)
+func GetMockAPI(uuid uint16) (*MockApi, error) {
+	mockApi, found := mockApiList[uuid]
+	if !found {
+		err := fmt.Errorf("no mockApi with uuid %d found", uuid)
 		log.Error(err)
 		return nil, err
 	}
 	return mockApi, nil
 }
 
-func MatchUrl(url string) (*MockApi, bool) {
+func GetMockApiList() map[uint16]*MockApi {
+	return mockApiList
+}
+
+// look for the mockApi whose name mathes the arg passed id. It
+// returns the mockApi and true/false if found or not
+func GetApiByName(name string) (*MockApi, bool) {
+	for _, mockApi := range mockApiList {
+		if mockApi.Name == name {
+			return mockApi, true
+		}
+	}
+	log.Errorf("no match for mockApi name '%s'", name)
+	return nil, false
+}
+
+// look for the mockApi whose url mathes the arg passed id. It
+// returns the mockApi and true/false if found or not
+func GetApiByUrl(url string) (*MockApi, bool) {
 	for _, mockApi := range mockApiList {
 		if mockApi.URL == url {
 			return mockApi, true
 		}
 	}
+	log.Errorf("no match for mockApi URL '%s'", url)
 	return nil, false
+}
+
+// pass in the mockApi whose Uuid must be found. It ranges over the
+// mockApiList and uses the 'Name' property to find a match with the
+// mockApi passed in. It returns the uuid that matches the name. It
+// returns a uuid and a boolean, true if found, false otherwise
+func GetUuid(mockApiToBeFound *MockApi) (uint16, bool) {
+	for uuid, mockApi := range mockApiList {
+		if mockApi.Name == mockApiToBeFound.Name {
+			return uuid, true
+		}
+	}
+	return 0, false
+}
+
+// add mock Api to the list. A random uuid is assigned to the mockapi
+func addMockApiToMap(mockApi MockApi) {
+
+	// attempt to retrieve the Uuid
+	uuid, found := GetUuid(&mockApi)
+
+	// if not found, assign a UUID
+	if !found {
+		uuid = generateUuid()
+	}
+
+	// add to the mockApi list
+	mockApiList[uuid] = &mockApi
+
+	if found {
+		log.Info("modified '", mockApi.Name, "' mock API")
+	} else {
+		log.Info("added '", mockApi.Name, "' mock API")
+	}
+}
+
+// generate a random uuid
+func generateUuid() uint16 {
+	var tmp uint16
+	var counter uint16 = 0
+	for {
+		if counter > 100 {
+			log.Fatal("Reached maximum numbers of attempts in generating a random uuid")
+		}
+		tmp = uint16(rand.Intn(_max_size_mockapi_list))
+		_, found := mockApiList[tmp]
+		if !found {
+			break
+		}
+		counter++
+	}
+	return tmp
 }
 
 func observeFolder(closeAll chan bool, wg *sync.WaitGroup) {
@@ -250,13 +305,6 @@ pollingCycle:
 
 func detectedNewMockApi(pathToFile string) {
 
-	// retireve file name
-	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
-	if !ok {
-		log.Error("suffix '.json' not found in the ", pathToFile, " file")
-		return
-	}
-
 	// open file
 	jsonFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -287,27 +335,7 @@ func detectedNewMockApi(pathToFile string) {
 		return
 	}
 
-	// check if it already exists
-	if savedMockApi, ok := mockApiList[fileName]; ok {
-		log.Debug("found another mock api named '", fileName, "'. Comparing the old one with the new one")
-		if reflect.DeepEqual(mockApi, *savedMockApi) {
-			log.Debug("mock api named '", mockApi.Name, "' has not changed. No action needed")
-			return
-		}
-		log.Debug("mock api named '", mockApi.Name, "' is different. Removing the old one and adding the new one to the list")
-		detectedRemovedMockApi(pathToFile)
-	}
-
-	// check the URL is not duplicated
-	if matchedMockApi, found := MatchUrl(mockApi.URL); found {
-		log.Errorf("mockApi '%s' duplicates the URL of the mockApi '%s'. MockApi %s not loaded", mockApi.Name, mockApi.Name, matchedMockApi.Name)
-		return
-	}
-
-	mockApi.Name = fileName
-	mockApiList[fileName] = &mockApi
-
-	log.Info("loaded '", fileName, "' mock API")
+	addMockApiToMap(mockApi)
 
 }
 
@@ -318,15 +346,20 @@ func detectedRemovedMockApi(pathToFile string) {
 		log.Error("suffix '.json' not found in the ", pathToFile, " file")
 		return
 	}
-	_, ok = mockApiList[fileName]
-	if !ok {
-		log.Info("mock api named '", fileName, "' not found. Probably already removed it")
+	mockApi, found := GetApiByName(fileName)
+	if !found {
+		log.Info("mock api named '", fileName, "' not found in the list. Probably already removed it")
 		return
 	}
-	delete(mockApiList, fileName)
-	if _, ok = mockApiList[fileName]; ok {
-		log.Errorf("mock api named %s was not removed", fileName)
+	uuid, found := GetUuid(mockApi)
+	if !found {
+		log.Error("uuid of the mockApi named '", mockApi.Name, "' not found in the list. MockApi not removed from the list")
+		return
+	}
+	delete(mockApiList, uuid)
+	if _, ok = mockApiList[uuid]; ok {
+		log.Errorf("mock api named %s was not removed", mockApi.Name)
 	} else {
-		log.Infof("mock api named %s was successfully removed", fileName)
+		log.Infof("mock api named %s was successfully removed", mockApi.Name)
 	}
 }
