@@ -2,7 +2,8 @@ package main
 
 import (
 	"dynamocker/internal/config"
-	mockapi "dynamocker/internal/mock-api"
+	mockapipkg "dynamocker/internal/mock-api"
+	mockapifilepkg "dynamocker/internal/mock-api-file"
 	webserver "dynamocker/internal/web-server"
 	"os"
 	"os/signal"
@@ -30,7 +31,13 @@ func main() {
 	config.ReadVars()
 
 	// init the mocked api management
-	if err := mockapi.Init(closeCh, &wg); err != nil {
+	if err := mockapipkg.Init(closeCh, &wg); err != nil {
+		log.Errorf("error initiating mockapi: %s", err)
+		panic("panic during mockapi initiations")
+	}
+
+	// init the mocked api file management
+	if err := mockapifilepkg.Init(); err != nil {
 		log.Errorf("error initiating mockapi: %s", err)
 		panic("panic during mockapi initiations")
 	}

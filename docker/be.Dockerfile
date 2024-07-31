@@ -19,7 +19,9 @@ RUN go mod download
 # copy directory files i.e all files ending with .go
 COPY be-app/ ./
 
-RUN ls -ltu
+RUN ls -ltu \
+&& apt-get install redis -y \
+&&B redis-server &
 
 # compile application
 RUN make build && make test
@@ -37,5 +39,7 @@ COPY --from=BUILD-BE /app/dynamocker /dynamocker
 # tells Docker that the container listens on specified network ports at runtime
 EXPOSE 8150
 
+RUN apt-get install redis -y
+
 # command to be used to execute when the image is used to start a container
-CMD [ "/dynamocker" ]
+CMD [ "redis-server && /dynamocker" ]

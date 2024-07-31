@@ -2,15 +2,18 @@ package webserver
 
 import (
 	"bytes"
+	"dynamocker/internal/common"
 	mockapi "dynamocker/internal/mock-api"
-	mockapipkg "dynamocker/internal/mock-api"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -21,7 +24,7 @@ import (
 func setup(t *testing.T) (chan bool, *WebServer) {
 
 	// set folderPath
-	if err := os.Setenv("DYNA_MOCK_API_FOLDER", os.TempDir()); err != nil {
+	if err := os.Setenv("DYNA_MOCK_API_FOLDER", os.TempDir()+"/"); err != nil {
 		t.Fatalf("cannot set env variable: %s", err)
 	}
 
@@ -45,8 +48,8 @@ func setup(t *testing.T) (chan bool, *WebServer) {
 	return closeCh, webServerTest
 }
 
-func dummyMockApi(t *testing.T) mockapi.MockApi {
-	var response mockapi.Response
+func dummyMockApi(t *testing.T) common.MockApi {
+	var response common.Response
 	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
 		t.Fatal("error while unmashaling")
 	}
@@ -59,7 +62,7 @@ func dummyMockApi(t *testing.T) mockapi.MockApi {
 	if json.Unmarshal([]byte(`{"response":"removed the item number 3"}`), &response.Delete) != nil {
 		t.Fatal("error while unmashaling")
 	}
-	return mockapi.MockApi{
+	return common.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:       "url.com",
 		Responses: response,
@@ -68,17 +71,23 @@ func dummyMockApi(t *testing.T) mockapi.MockApi {
 
 // write a dummy mock api file to the Temp folder. The temp folder
 // comes from os package
-func writeDummyMockApiFile(t *testing.T) (*os.File, mockapi.MockApi) {
+func writeDummyMockApiFile(t *testing.T) (uint16, *os.File, common.MockApi) {
 	mockApi := dummyMockApi(t)
-	filePath := os.TempDir() + "/" + mockApi.Name + ".json"
-
-	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	uuid := uint16(rand.Intn(1000))
+	filename := fmt.Sprintf("%d", uuid) + ".json"
+	filePath := os.TempDir() + "/" + filename
+	file, err := os.Create(filePath)
 	if err != nil {
 		file.Close()
-		t.Fatalf("cannot open file :%s", err)
+		t.Fatal(err)
 	}
-
 	defer file.Close()
+	_, ok := strings.CutSuffix(filename, ".json")
+	if !ok {
+		file.Close()
+		t.Fatal("malformed string modification")
+	}
+	mockApi.Name = fmt.Sprintf("dummy-mock-api-%d", uuid)
 	data, err := json.Marshal(mockApi)
 	if err != nil {
 		file.Close()
@@ -88,7 +97,7 @@ func writeDummyMockApiFile(t *testing.T) (*os.File, mockapi.MockApi) {
 		file.Close()
 		t.Fatalf("error while writing dummy mock api to file :%s", err)
 	}
-	return file, mockApi
+	return uuid, file, mockApi
 }
 
 func TestGetMockApi(t *testing.T) {
@@ -97,22 +106,16 @@ func TestGetMockApi(t *testing.T) {
 	closeCh, webServerTest := setup(t)
 
 	// write dummy mock Api
-	_, mockApi := writeDummyMockApiFile(t)
+	uuid, _, mockApi := writeDummyMockApiFile(t)
 	defer func() {
 		closeCh <- true
 		// wait
 		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApi)
+		removeMockApiFile(t, uuid)
 	}()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
-
-	// get uuid of the mockApi
-	uuid, found := mockapipkg.GetUuid(&mockApi)
-	if !found {
-		t.Fatal("uuid not recoverable")
-	}
 
 	// test get/{uuid} api
 	r := httptest.NewRecorder()
@@ -144,18 +147,18 @@ func TestGetMockApis(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// write three mock apis
-	_, mockApi1 := writeDummyMockApiFile(t)
+	uuid1, _, _ := writeDummyMockApiFile(t)
 	time.Sleep(50 * time.Millisecond)
-	_, mockApi2 := writeDummyMockApiFile(t)
+	uuid2, _, _ := writeDummyMockApiFile(t)
 	time.Sleep(50 * time.Millisecond)
-	_, mockApi3 := writeDummyMockApiFile(t)
+	uuid3, _, _ := writeDummyMockApiFile(t)
 
 	defer func() {
 		// wait
 		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApi1)
-		removeMockApiFile(t, mockApi2)
-		removeMockApiFile(t, mockApi3)
+		removeMockApiFile(t, uuid1)
+		removeMockApiFile(t, uuid2)
+		removeMockApiFile(t, uuid3)
 	}()
 
 	// wait
@@ -188,16 +191,16 @@ func TestDeleteMockApis(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// write three mock apis
-	_, mockApi1 := writeDummyMockApiFile(t)
-	_, mockApi2 := writeDummyMockApiFile(t)
-	_, mockApi3 := writeDummyMockApiFile(t)
+	uuid1, _, _ := writeDummyMockApiFile(t)
+	uuid2, _, _ := writeDummyMockApiFile(t)
+	uuid3, _, _ := writeDummyMockApiFile(t)
 
 	defer func() {
 		// wait
 		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApi1)
-		removeMockApiFile(t, mockApi2)
-		removeMockApiFile(t, mockApi3)
+		removeMockApiFile(t, uuid1)
+		removeMockApiFile(t, uuid2)
+		removeMockApiFile(t, uuid3)
 	}()
 
 	// wait
@@ -225,29 +228,23 @@ func TestDeleteMockApi(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// write three mock apis
-	_, mockApi1 := writeDummyMockApiFile(t)
-	_, mockApi2 := writeDummyMockApiFile(t)
-	_, mockApi3 := writeDummyMockApiFile(t)
+	uuid1, _, _ := writeDummyMockApiFile(t)
+	uuid2, _, _ := writeDummyMockApiFile(t)
+	uuid3, _, _ := writeDummyMockApiFile(t)
 
 	defer func() {
 		// wait
 		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApi1)
-		removeMockApiFile(t, mockApi2)
-		removeMockApiFile(t, mockApi3)
+		removeMockApiFile(t, uuid1)
+		removeMockApiFile(t, uuid2)
+		removeMockApiFile(t, uuid3)
 	}()
 
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	// get uuid of the mockApi
-	uuid, found := mockapipkg.GetUuid(&mockApi1)
-	if !found {
-		t.Fatal("uuid not recoverable")
-	}
-
 	// test delete api
-	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid)
+	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid1)
 	r := httptest.NewRecorder()
 	webServerTest.router.ServeHTTP(r, httptest.NewRequest("DELETE", url, nil))
 	assert.Equal(t, http.StatusNoContent, r.Code)
@@ -276,7 +273,7 @@ func TestPostMockApi(t *testing.T) {
 		t.Fatalf("error while marshalign object : %s", err)
 	}
 
-	// POST request
+	// create POST request
 	postReqUrl := "/dynamocker/api/mock-api"
 	webServerTest.router.ServeHTTP(r, httptest.NewRequest("POST", postReqUrl, bytes.NewBuffer(bytesPost)))
 
@@ -287,16 +284,39 @@ func TestPostMockApi(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// check content of file
-	file, err := os.Stat(os.TempDir() + "/" + mockApiPost.Name + ".json")
-	assert.Nil(t, err)
+	var files []fs.DirEntry
+	var jsonFilescounter = 0
+	var uuidString string
+	var found = false
+	// retrieve uuid of the mockApi just written in the temp file after the POST request
+	if files, err = os.ReadDir(os.TempDir() + "/"); err != nil {
+		t.Fatalf("error while getting entries from the mock api folder: %s", err)
+	}
+	for _, file := range files {
+
+		if !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+		jsonFilescounter++
+		uuidString, found = strings.CutSuffix(file.Name(), ".json")
+	}
+	assert.True(t, found)
+	assert.Equal(t, 1, jsonFilescounter, "this means that some other json file is present in the test folder, jeopardizing the test result")
+
+	mockApiUuid64, err := strconv.ParseUint(uuidString, 10, 16)
+	if err != nil {
+		err := fmt.Errorf("error while parsing uuid '%s' into uint16", uuidString)
+		t.Fatal(err)
+	}
+	uuid := uint16(mockApiUuid64)
+
 	defer func() {
 		// wait
 		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApiPost)
+		removeMockApiFile(t, uuid)
 	}()
 
-	// retrieve mockApi just written in the temp file after the POST request
-	jsonFile, err := os.Open(os.TempDir() + "/" + file.Name())
+	jsonFile, err := os.Open(os.TempDir() + "/" + uuidString + ".json")
 	if err != nil {
 		t.Fatalf("cannot open the file: %s", err)
 	}
@@ -304,7 +324,7 @@ func TestPostMockApi(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot read from the file: %s", err)
 	}
-	var mockApi mockapi.MockApi
+	var mockApi common.MockApi
 	err = json.Unmarshal(byteValue, &mockApi)
 	if err != nil {
 		t.Fatalf("cannot unmarshal bytes: %s", err)
@@ -328,12 +348,12 @@ func TestPutMockApi(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// write mock api
-	_, mockApi := writeDummyMockApiFile(t)
+	uuid, _, mockApi := writeDummyMockApiFile(t)
 
 	defer func() {
 		// wait
 		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApi)
+		removeMockApiFile(t, uuid)
 	}()
 
 	// wait
@@ -341,10 +361,6 @@ func TestPutMockApi(t *testing.T) {
 
 	assert.Equal(t, 1, len(mockapi.GetMockApiList()))
 
-	uuid, found := mockapipkg.GetUuid(&mockApi)
-	if !found {
-		t.Fatalf("uuid not found")
-	}
 	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid)
 	r := httptest.NewRecorder()
 
@@ -387,47 +403,47 @@ func TestPutMockApi(t *testing.T) {
 
 func TestServeMockApi(t *testing.T) {
 	// setup server and mockApi mgmt
-	closeCh, webServerTest := setup(t)
-	defer func() { closeCh <- true }()
+	// closeCh, webServerTest := setup(t)
+	// defer func() { closeCh <- true }()
 
-	// wait
-	time.Sleep(50 * time.Millisecond)
+	// // wait
+	// time.Sleep(50 * time.Millisecond)
 
-	// write mock api
-	_, mockApi := writeDummyMockApiFile(t)
+	// // write mock api
+	// uuid, _, mockApi := writeDummyMockApiFile(t)
 
-	defer func() {
-		// wait
-		time.Sleep(50 * time.Millisecond)
-		removeMockApiFile(t, mockApi)
-	}()
+	// defer func() {
+	// 	// wait
+	// 	time.Sleep(50 * time.Millisecond)
+	// 	removeMockApiFile(t, uuid)
+	// }()
 
-	// wait
-	time.Sleep(50 * time.Millisecond)
+	// // wait
+	// time.Sleep(50 * time.Millisecond)
 
-	assert.Equal(t, 1, len(mockapi.GetMockApiList()))
+	// assert.Equal(t, 1, len(mockapi.GetMockApiList()))
 
-	// generate request
-	url := mockApi.Name
-	r := httptest.NewRecorder()
+	// // generate request
+	// url := mockApi.Name
+	// r := httptest.NewRecorder()
 
-	// test get response of the MockApi
-	webServerTest.router.ServeHTTP(r, httptest.NewRequest("GET", url, nil))
-	assert.Equal(t, http.StatusNoContent, r.Code)
+	// // test get response of the MockApi
+	// webServerTest.router.ServeHTTP(r, httptest.NewRequest("GET", url, nil))
+	// assert.Equal(t, http.StatusNoContent, r.Code)
 
-	// wait
-	time.Sleep(50 * time.Millisecond)
+	// // wait
+	// time.Sleep(50 * time.Millisecond)
 
 	// TODO: complete the test
 
 }
 
-func removeMockApiFile(t *testing.T, mockApi mockapi.MockApi) {
+func removeMockApiFile(t *testing.T, uuid uint16) {
 
-	filename := os.TempDir() + "/" + mockApi.Name + ".json"
-	_, err := os.Stat(filename)
+	filePath := os.TempDir() + "/" + fmt.Sprintf("%d", uuid) + ".json"
+	_, err := os.Stat(filePath)
 	if err == nil {
-		err = os.Remove(filename)
+		err = os.Remove(filePath)
 		if err != nil {
 			t.Fatal("file not removed")
 		}

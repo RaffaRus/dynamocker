@@ -1,11 +1,11 @@
-package mockapipkg
+package common
 
-const _max_size_mockapi_list = 65535
+const MAX_SIZE_MOCKAPI_LIST = 65535
 
 // Structure used to model the MockApi.
 type MockApi struct {
 
-	// name of the file without the path and the json suffix
+	// name of the file without the path and the json suffixs
 	Name string `json:"name" validate:"required"`
 
 	// url where this MockApi will be served

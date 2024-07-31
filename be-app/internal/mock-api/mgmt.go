@@ -1,12 +1,12 @@
 package mockapipkg
 
 import (
+	"dynamocker/internal/common"
 	"dynamocker/internal/config"
+	mockapifilepkg "dynamocker/internal/mock-api-file"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
-	"math/rand"
 	"os"
 	"path"
 	"strconv"
@@ -19,19 +19,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: improve the way the mockapi are handled:
-// 	- the uniqueness of the uuid is ensured by the map construct whose key is the uuid
-// 	- the uniqueness of the name and of the url is checked with a for cycle O(N)*2 --> this must be improved
+var folderPath = ""
 
-var mockApiList = make(map[uint16]*MockApi)
+var mockApiList = make(map[uint16]*common.MockApi)
 
 func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 
-	mockApiList = make(map[uint16]*MockApi)
+	err := mockapifilepkg.Init()
+	if err != nil {
+		return err
+	}
+	mockApiList = make(map[uint16]*common.MockApi)
 	folderPath = config.GetMockApiFolder()
 
 	// load the stored APIs for the first time
-	if err := loadAPIsFromFolder(); err != nil {
+	mockApiList, err = mockapifilepkg.LoadAPIsFromFolder()
+	if err != nil {
 		return err
 	}
 
@@ -46,78 +49,15 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 	return nil
 }
 
-// loading the APIs from the mock api folder at startup
-// this function updates the list based on the entried loaded from the folder
-func loadAPIsFromFolder() (err error) {
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	var files []fs.DirEntry
-
-	// get path from config package
-	if folderPath == "" {
-		return fmt.Errorf("the mock API folder has not been set-up")
-	}
-
-	if files, err = os.ReadDir(folderPath); err != nil {
-		return fmt.Errorf("error while getting entries from the mock api folder: %s", err)
-	}
-
-	for _, file := range files {
-
-		// select only *.json files
-		if !strings.HasSuffix(file.Name(), ".json") {
-			continue
-		}
-
-		pathToFile := folderPath + "/" + file.Name()
-
-		// open file
-		jsonFile, err := os.Open(pathToFile)
-		if err != nil {
-			log.Errorf("error while opening the file %s: %s", pathToFile, err)
-			continue
-		}
-
-		// read content
-		byteValue, err := io.ReadAll(jsonFile)
-		if err != nil {
-			log.Errorf("error while reading the file %s: %s", pathToFile, err)
-			continue
-		}
-
-		// unmarshal content
-		var mockApi MockApi
-		err = json.Unmarshal(byteValue, &mockApi)
-		if err != nil {
-			log.Errorf("error while unmarshaling the json file %s into the struct: %s", pathToFile, err)
-			continue
-		}
-
-		// validate content
-		vtor := validator.New(validator.WithRequiredStructEnabled())
-		err = vtor.Struct(mockApi)
-		if err != nil {
-			log.Errorf("invalid mock api saved in the json file %s into the struct: %s", pathToFile, err)
-			continue
-		}
-
-		addMockApiToMap(mockApi)
-	}
-
-	return nil
-}
-
-func GetMockAPIs() []*MockApi {
-	ret := make([]*MockApi, 0)
+func GetMockAPIs() []*common.MockApi {
+	ret := make([]*common.MockApi, 0)
 	for _, mockApi := range mockApiList {
 		ret = append(ret, mockApi)
 	}
 	return ret
 }
 
-func GetMockAPI(uuid uint16) (*MockApi, error) {
+func GetMockAPI(uuid uint16) (*common.MockApi, error) {
 	mockApi, found := mockApiList[uuid]
 	if !found {
 		err := fmt.Errorf("no mockApi with uuid %d found", uuid)
@@ -127,13 +67,13 @@ func GetMockAPI(uuid uint16) (*MockApi, error) {
 	return mockApi, nil
 }
 
-func GetMockApiList() map[uint16]*MockApi {
+func GetMockApiList() map[uint16]*common.MockApi {
 	return mockApiList
 }
 
 // look for the mockApi whose name mathes the arg passed id. It
 // returns the mockApi and true/false if found or not
-func GetApiByName(name string) (*MockApi, bool) {
+func GetApiByName(name string) (*common.MockApi, bool) {
 	for _, mockApi := range mockApiList {
 		if mockApi.Name == name {
 			return mockApi, true
@@ -145,7 +85,7 @@ func GetApiByName(name string) (*MockApi, bool) {
 
 // look for the mockApi whose url mathes the arg passed id. It
 // returns the mockApi and true/false if found or not
-func GetApiByUrl(url string) (*MockApi, bool) {
+func GetApiByUrl(url string) (*common.MockApi, bool) {
 	for _, mockApi := range mockApiList {
 		if mockApi.URL == url {
 			return mockApi, true
@@ -153,58 +93,6 @@ func GetApiByUrl(url string) (*MockApi, bool) {
 	}
 	log.Errorf("no match for mockApi URL '%s'", url)
 	return nil, false
-}
-
-// pass in the mockApi whose Uuid must be found. It ranges over the
-// mockApiList and uses the 'Name' property to find a match with the
-// mockApi passed in. It returns the uuid that matches the name. It
-// returns a uuid and a boolean, true if found, false otherwise
-func GetUuid(mockApiToBeFound *MockApi) (uint16, bool) {
-	for uuid, mockApi := range mockApiList {
-		if mockApi.Name == mockApiToBeFound.Name {
-			return uuid, true
-		}
-	}
-	return 0, false
-}
-
-// add mock Api to the list. A random uuid is assigned to the mockapi
-func addMockApiToMap(mockApi MockApi) {
-
-	// attempt to retrieve the Uuid
-	uuid, found := GetUuid(&mockApi)
-
-	// if not found, assign a UUID
-	if !found {
-		uuid = generateUuid()
-	}
-
-	// add to the mockApi list
-	mockApiList[uuid] = &mockApi
-
-	if found {
-		log.Info("modified '", mockApi.Name, "' mock API")
-	} else {
-		log.Info("added '", mockApi.Name, "' mock API")
-	}
-}
-
-// generate a random uuid
-func generateUuid() uint16 {
-	var tmp uint16
-	var counter uint16 = 0
-	for {
-		if counter > 100 {
-			log.Fatal("Reached maximum numbers of attempts in generating a random uuid")
-		}
-		tmp = uint16(rand.Intn(_max_size_mockapi_list))
-		_, found := mockApiList[tmp]
-		if !found {
-			break
-		}
-		counter++
-	}
-	return tmp
 }
 
 func observeFolder(closeAll chan bool, wg *sync.WaitGroup) {
@@ -245,12 +133,12 @@ detectingCycle:
 			// any modification to the api file
 			if event.Has(fsnotify.Write) {
 				log.Debug("modified json detected in the folder: ", fileName)
-				detectedNewMockApi(event.Name)
+				detectedNewMockApi(fileName)
 			}
 			// removed api file
 			if event.Has(fsnotify.Remove) {
 				log.Debug("removed json detected in the folder: ", fileName)
-				detectedRemovedMockApi(event.Name)
+				detectedRemovedMockApi(fileName)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -296,34 +184,34 @@ pollingCycle:
 			break pollingCycle
 		default:
 			time.Sleep(time.Duration(pollerInterval) * time.Second) // poll each 'config.GetPollingInterval()' seconds
-			if err := loadAPIsFromFolder(); err != nil {
+			if mockApiList, err = mockapifilepkg.LoadAPIsFromFolder(); err != nil {
 				log.Error("error while loading the stored APIs: ", err)
 			}
 		}
 	}
 }
 
-func detectedNewMockApi(pathToFile string) {
+func detectedNewMockApi(fileName string) {
 
 	// open file
-	jsonFile, err := os.Open(pathToFile)
+	jsonFile, err := os.Open(folderPath + fileName)
 	if err != nil {
-		log.Errorf("error while opening the file %s: %s", pathToFile, err)
+		log.Errorf("error while opening the file %s: %s", fileName, err)
 		return
 	}
 
 	// read content
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		log.Errorf("error while reading the file %s: %s", pathToFile, err)
+		log.Errorf("error while reading the file %s: %s", fileName, err)
 		return
 	}
 
 	// unmarshal content
-	var mockApi MockApi
+	var mockApi common.MockApi
 	err = json.Unmarshal(byteValue, &mockApi)
 	if err != nil {
-		log.Errorf("error while unmarshaling the json file %s into the struct: %s", pathToFile, err)
+		log.Errorf("error while unmarshaling the json file %s into the struct: %s", fileName, err)
 		return
 	}
 
@@ -331,33 +219,57 @@ func detectedNewMockApi(pathToFile string) {
 	vtor := validator.New(validator.WithRequiredStructEnabled())
 	err = vtor.Struct(mockApi)
 	if err != nil {
-		log.Errorf("invalid mock api saved in the json file %s into the struct: %s", pathToFile, err)
+		log.Errorf("invalid mock api saved in the json file %s into the struct: %s", fileName, err)
 		return
 	}
 
-	addMockApiToMap(mockApi)
+	// parse uuid into a uint16
+	uuidString, found := strings.CutSuffix(fileName, ".json")
+	if !found {
+		log.Error("suffix '.json' not found")
+		return
+	}
+	mockApiUuid64, err := strconv.ParseUint(uuidString, 10, 16)
+	if err != nil {
+		err := fmt.Errorf("error while parsing uuid of the mockApi file '%s' into uint16", fileName)
+		log.Error(err)
+	}
+	uuid := uint16(mockApiUuid64)
+
+	// add it to the list
+	mockApiList[uuid] = &mockApi
 
 }
 
 // function called once a json mock api file has been removed from the folder
-func detectedRemovedMockApi(pathToFile string) {
-	fileName, ok := strings.CutSuffix(path.Base(pathToFile), ".json")
-	if !ok {
-		log.Error("suffix '.json' not found in the ", pathToFile, " file")
+func detectedRemovedMockApi(fileName string) {
+
+	// parse uuid into a uint16
+	uuidString, found := strings.CutSuffix(fileName, ".json")
+	if !found {
+		log.Error("suffix '.json' not found")
 		return
 	}
-	mockApi, found := GetApiByName(fileName)
+	// parse uuid into a uint16
+	mockApiUuid64, err := strconv.ParseUint(uuidString, 10, 16)
+	if err != nil {
+		err := fmt.Errorf("error while parsing uuid of the mockApi file '%s' into uint16", fileName)
+		log.Error(err)
+	}
+	uuid := uint16(mockApiUuid64)
+
+	// search for the mockApi
+	mockApi, found := mockApiList[uuid]
 	if !found {
 		log.Info("mock api named '", fileName, "' not found in the list. Probably already removed it")
 		return
 	}
-	uuid, found := GetUuid(mockApi)
-	if !found {
-		log.Error("uuid of the mockApi named '", mockApi.Name, "' not found in the list. MockApi not removed from the list")
-		return
-	}
+
+	// delete the mockApi from the list
 	delete(mockApiList, uuid)
-	if _, ok = mockApiList[uuid]; ok {
+
+	// check it was removed from the list
+	if _, ok := mockApiList[uuid]; ok {
 		log.Errorf("mock api named %s was not removed", mockApi.Name)
 	} else {
 		log.Infof("mock api named %s was successfully removed", mockApi.Name)

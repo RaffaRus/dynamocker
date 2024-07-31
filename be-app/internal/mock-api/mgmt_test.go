@@ -1,12 +1,11 @@
 package mockapipkg
 
 import (
+	"dynamocker/internal/common"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
-	"path"
-	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -19,13 +18,13 @@ const observeFolderWitingTimeMilliseconds = 200
 
 // reset package map and folderPath variable
 func reset(t *testing.T) {
-	mockApiList = make(map[uint16]*MockApi)
+	mockApiList = make(map[uint16]*common.MockApi)
 	folderPath = ""
 	assert.Equal(t, 0, len(mockApiList))
 }
 
-func dummyMockApi(t *testing.T) MockApi {
-	var response Response
+func dummyMockApi(t *testing.T) common.MockApi {
+	var response common.Response
 	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
 		t.Fatal("error while unmashaling")
 	}
@@ -38,16 +37,16 @@ func dummyMockApi(t *testing.T) MockApi {
 	if json.Unmarshal([]byte(`{"response":"removed the item number 3"}`), &response.Delete) != nil {
 		t.Fatal("error while unmashaling")
 	}
-	return MockApi{
+	return common.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
 		URL:       "url.com",
 		Responses: response,
 	}
 }
 
-func dummyMockApiArray(t *testing.T) []*MockApi {
-	var mockApis []*MockApi
-	var response Response
+func dummyMockApiArray(t *testing.T) []*common.MockApi {
+	var mockApis []*common.MockApi
+	var response common.Response
 	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
 		t.Fatal("error while unmashaling")
 	}
@@ -62,7 +61,7 @@ func dummyMockApiArray(t *testing.T) []*MockApi {
 	}
 	for i := 0; i < 5; i++ {
 		mockApis = append(mockApis,
-			&MockApi{
+			&common.MockApi{
 				Name:      fmt.Sprintf("dummy-mock-api-%d", i),
 				URL:       "url.com",
 				Responses: response,
@@ -73,20 +72,23 @@ func dummyMockApiArray(t *testing.T) []*MockApi {
 
 // write a dummy mock api file to the Temp folder. The temp folder
 // comes from os package
-func writeDummyMockApiFile(t *testing.T) (*os.File, MockApi) {
+func writeDummyMockApiFile(t *testing.T) (uint16, *os.File, common.MockApi) {
 	mockApi := dummyMockApi(t)
-	file, err := os.CreateTemp("", "dummy-mock-api-*.json")
+	uuid := uint16(rand.Intn(1000))
+	filename := fmt.Sprintf("%d", uuid) + ".json"
+	filePath := os.TempDir() + "/" + filename
+	file, err := os.Create(filePath)
 	if err != nil {
 		file.Close()
 		t.Fatal(err)
 	}
 	defer file.Close()
-	name, ok := strings.CutSuffix(path.Base(file.Name()), ".json")
-	if ok != true {
+	_, ok := strings.CutSuffix(filename, ".json")
+	if !ok {
 		file.Close()
 		t.Fatal("malformed string modification")
 	}
-	mockApi.Name = name
+	mockApi.Name = fmt.Sprintf("dummy-mock-api-%d", uuid)
 	data, err := json.Marshal(mockApi)
 	if err != nil {
 		file.Close()
@@ -96,7 +98,7 @@ func writeDummyMockApiFile(t *testing.T) (*os.File, MockApi) {
 		file.Close()
 		t.Fatalf("error while writing dummy mock api to file :%s", err)
 	}
-	return file, mockApi
+	return uuid, file, mockApi
 }
 
 // check that the closeChannel works
@@ -104,7 +106,7 @@ func TestMockApiInit(t *testing.T) {
 	reset(t)
 
 	// set mock api folder as a temp folder
-	if err := os.Setenv("DYNA_MOCK_API_FOLDER", t.TempDir()); err != nil {
+	if err := os.Setenv("DYNA_MOCK_API_FOLDER", os.TempDir()+"/"); err != nil {
 		t.Fatalf("cannot set env variable: %s", err)
 	}
 
@@ -116,7 +118,6 @@ func TestMockApiInit(t *testing.T) {
 	// make channel and waiting group
 	closeCh := make(chan bool)
 	var wg sync.WaitGroup
-	// start Init
 	err := Init(closeCh, &wg)
 	assert.Nil(t, err)
 
@@ -144,31 +145,6 @@ func TestMockApiInit(t *testing.T) {
 	t.Fatal("wg not emptied, something went wrong")
 }
 
-func TestLoadStoredAPIs(t *testing.T) {
-	reset(t)
-
-	// call function before defining any folder. This should log only
-	err := loadAPIsFromFolder()
-	assert.Equal(t, fmt.Errorf("the mock API folder has not been set-up"), err)
-
-	// set temp folder as the one contining the mock api files
-	folderPath = os.TempDir()
-	assert.Nil(t, loadAPIsFromFolder())
-
-	// add mock api
-	dummyMockApiFile, _ := writeDummyMockApiFile(t)
-	defer func() {
-		dummyMockApiFile.Close()
-		os.Remove(dummyMockApiFile.Name())
-	}()
-
-	// check that the apis have been loaded
-	assert.Nil(t, loadAPIsFromFolder(), "the function should return no error")
-	mockApiFileName, _ := strings.CutSuffix(path.Base(dummyMockApiFile.Name()), ".json")
-	_, found := GetApiByName(mockApiFileName)
-	assert.True(t, found)
-}
-
 func TestGetAPIs(t *testing.T) {
 	reset(t)
 	assert.Empty(t, GetMockAPIs(), "GetAPIs() should return empty array")
@@ -176,7 +152,7 @@ func TestGetAPIs(t *testing.T) {
 	// add apis to the map and check length
 	mockApis := dummyMockApiArray(t)
 	for i := 0; i < 5; i++ {
-		addMockApiToMap(*mockApis[i])
+		mockApiList[uint16(i)] = mockApis[i]
 	}
 	assert.Equal(t, 5, len(GetMockAPIs()))
 
@@ -195,8 +171,7 @@ func TestGetAPI(t *testing.T) {
 
 	// add mock api to the map
 	mockApi := dummyMockApi(t)
-	uuid := generateUuid()
-	mockApiList[uuid] = &mockApi
+	mockApiList[0] = &mockApi
 
 	// check the get works
 	res, found := GetApiByName(mockApi.Name)
@@ -263,7 +238,7 @@ func TestObserveFolderCorrectlyClosing(t *testing.T) {
 	reset(t)
 
 	// set mock api folder as a temp folder
-	folderPath = os.TempDir()
+	folderPath = os.TempDir() + "/"
 
 	// make channel and waiting group
 	closeCh := make(chan bool)
@@ -294,7 +269,7 @@ func TestObserveFolderNoJson(t *testing.T) {
 	reset(t)
 
 	// set mock api folder as a temp folder
-	folderPath = os.TempDir()
+	folderPath = os.TempDir() + "/"
 
 	// make channel and waiting group
 	closeCh := make(chan bool)
@@ -331,7 +306,7 @@ func TestObserveFolder(t *testing.T) {
 	reset(t)
 
 	// set mock api folder as a temp folder
-	folderPath = os.TempDir()
+	folderPath = os.TempDir() + "/"
 
 	// make channel and waiting group
 	closeCh := make(chan bool)
@@ -345,10 +320,11 @@ func TestObserveFolder(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// write proper mock api file
-	file, mockApi := writeDummyMockApiFile(t)
+	uuid, file, mockApi := writeDummyMockApiFile(t)
+	filePath := folderPath + fmt.Sprintf("%d", uuid) + ".json"
 	defer func() {
-		if _, err := os.Stat(file.Name()); err == nil {
-			os.Remove(file.Name())
+		if _, err := os.Stat(filePath); err == nil {
+			os.Remove(filePath)
 		}
 	}()
 
@@ -357,6 +333,8 @@ func TestObserveFolder(t *testing.T) {
 	// check the mock api has been loaded
 	assert.Equal(t, 1, len(mockApiList))
 	retrievedMockApi, found := GetApiByName(mockApi.Name)
+	assert.True(t, found)
+	_, found = mockApiList[uuid]
 	assert.True(t, found)
 	assert.Equal(t, mockApi.Name, retrievedMockApi.Name)
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
@@ -384,10 +362,10 @@ func TestObserveFolder(t *testing.T) {
 		file.Close()
 		t.Fatalf("error while marshaling dummy mock api :%s", err)
 	}
-	if _, err = os.Stat(file.Name()); err != nil {
+	if _, err = os.Stat(filePath); err != nil {
 		t.Fatalf("error while querying for file info: %s", err)
 	}
-	file, err = os.OpenFile(file.Name(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err = os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		file.Close()
 		t.Fatalf("cannot open file :%s", err)
@@ -413,14 +391,14 @@ func TestObserveFolder(t *testing.T) {
 	assert.Equal(t, mockApi.Responses.Delete, retrievedMockApi.Responses.Delete)
 
 	// remove file
-	os.Remove(file.Name())
+	os.Remove(filePath)
 
 	// attend for the modifications to be loaded by the observing gorutine
 	time.Sleep(100 * time.Millisecond)
 
 	// check the mock api has been removed
 	assert.Equal(t, 0, len(mockApiList))
-	_, found = GetUuid(&mockApi)
+	_, found = mockApiList[uuid]
 	assert.False(t, found)
 
 }
@@ -429,7 +407,7 @@ func TestStopObserving(t *testing.T) {
 	reset(t)
 
 	// set mock api folder as a temp folder
-	folderPath = os.TempDir()
+	folderPath = os.TempDir() + "/"
 
 	// make channel and waiting group
 	closeCh := make(chan bool)
@@ -443,10 +421,12 @@ func TestStopObserving(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// write proper mock api file
-	file, _ := writeDummyMockApiFile(t)
+	uuid, file, _ := writeDummyMockApiFile(t)
+	filePath := folderPath + fmt.Sprintf("%d", uuid) + ".json"
 	defer func() {
-		if _, err := os.Stat(file.Name()); err == nil {
-			os.Remove(file.Name())
+		file.Close()
+		if _, err := os.Stat(filePath); err == nil {
+			os.Remove(filePath)
 		}
 	}()
 
@@ -461,68 +441,68 @@ func TestStopObserving(t *testing.T) {
 	// let goroutine stop
 	time.Sleep(100 * time.Millisecond)
 
-	otherFile, _ := writeDummyMockApiFile(t)
+	otherUuid, otherFile, _ := writeDummyMockApiFile(t)
+	otherFilePath := folderPath + fmt.Sprintf("%d", otherUuid) + ".json"
 	defer func() {
 		otherFile.Close()
-		os.Remove(otherFile.Name())
+		os.Remove(otherFilePath)
 	}()
 
 	// this file should not have been loaded by the observing goroutine and it
 	// can be double checked by checking that the new mock api has not been loaded
 	assert.Equal(t, 1, len(mockApiList))
+	_, found := mockApiList[otherUuid]
+	assert.False(t, found)
 
 }
 
-func TestDetectAlreadyExistingMockApi(t *testing.T) {
-	reset(t)
+// TODO : add the feature to detect altready existing mockApis and write test
+// func TestDetectAlreadyExistingMockApi(t *testing.T) {
+// 	reset(t)
 
-	// add mock api to the map
-	uuid := generateUuid()
-	mockApi := dummyMockApi(t)
-	mockApiList[uuid] = &mockApi
+// 	// add mock api to the map
+// 	uuid := generateUuid()
+// 	mockApi := dummyMockApi(t)
+// 	mockApiList[uuid] = &mockApi
 
-	assert.True(t, reflect.DeepEqual(mockApi, mockApi))
+// 	assert.True(t, reflect.DeepEqual(mockApi, mockApi))
 
-	mockApiDifferentName := mockApi
-	mockApiDifferentName.Name = "differentName"
-	assert.False(t, reflect.DeepEqual(mockApiDifferentName, mockApi))
+// 	mockApiDifferentName := mockApi
+// 	mockApiDifferentName.Name = "differentName"
+// 	assert.False(t, reflect.DeepEqual(mockApiDifferentName, mockApi))
 
-	mockApiDifferentURL := mockApi
-	mockApiDifferentURL.URL = "differentURL.com"
-	assert.False(t, reflect.DeepEqual(mockApiDifferentURL, mockApi))
+// 	mockApiDifferentURL := mockApi
+// 	mockApiDifferentURL.URL = "differentURL.com"
+// 	assert.False(t, reflect.DeepEqual(mockApiDifferentURL, mockApi))
 
-	mockApiDifferentGetResponse := mockApi
-	mockApiDifferentGetResponse.Responses.Get = nil
-	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentGetResponse.Responses.Get) != nil {
-		t.Fatal("error while unmashaling")
-	}
-	assert.False(t, reflect.DeepEqual(mockApiDifferentGetResponse, mockApi))
+// 	mockApiDifferentGetResponse := mockApi
+// 	mockApiDifferentGetResponse.Responses.Get = nil
+// 	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentGetResponse.Responses.Get) != nil {
+// 		t.Fatal("error while unmashaling")
+// 	}
+// 	assert.False(t, reflect.DeepEqual(mockApiDifferentGetResponse, mockApi))
 
-	mockApiDifferentPostResponse := mockApi
-	mockApiDifferentPostResponse.Responses.Post = nil
-	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentPostResponse.Responses.Post) != nil {
-		t.Fatal("error while unmashaling")
-	}
-	assert.False(t, reflect.DeepEqual(mockApiDifferentPostResponse, mockApi))
+// 	mockApiDifferentPostResponse := mockApi
+// 	mockApiDifferentPostResponse.Responses.Post = nil
+// 	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentPostResponse.Responses.Post) != nil {
+// 		t.Fatal("error while unmashaling")
+// 	}
+// 	assert.False(t, reflect.DeepEqual(mockApiDifferentPostResponse, mockApi))
 
-	mockApiDifferentPatchResponse := mockApi
-	mockApiDifferentPatchResponse.Responses.Patch = nil
-	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentPatchResponse.Responses.Patch) != nil {
-		t.Fatal("error while unmashaling")
-	}
-	assert.False(t, reflect.DeepEqual(mockApiDifferentPatchResponse, mockApi))
+// 	mockApiDifferentPatchResponse := mockApi
+// 	mockApiDifferentPatchResponse.Responses.Patch = nil
+// 	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentPatchResponse.Responses.Patch) != nil {
+// 		t.Fatal("error while unmashaling")
+// 	}
+// 	assert.False(t, reflect.DeepEqual(mockApiDifferentPatchResponse, mockApi))
 
-	mockApiDifferentDeleteResponse := mockApi
-	mockApiDifferentDeleteResponse.Responses.Delete = nil
-	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentDeleteResponse.Responses.Delete) != nil {
-		t.Fatal("error while unmashaling")
-	}
-	assert.False(t, reflect.DeepEqual(mockApiDifferentDeleteResponse, mockApi))
+// 	mockApiDifferentDeleteResponse := mockApi
+// 	mockApiDifferentDeleteResponse.Responses.Delete = nil
+// 	if json.Unmarshal([]byte(`{"new_get_response":true}`), &mockApiDifferentDeleteResponse.Responses.Delete) != nil {
+// 		t.Fatal("error while unmashaling")
+// 	}
+// 	assert.False(t, reflect.DeepEqual(mockApiDifferentDeleteResponse, mockApi))
 
-}
-
-// func TestGenerateUuid(t *testing.T) {
-// 	// TODO compelte test
 // }
 
 // func TestGetApiByName(t *testing.T) {
@@ -534,9 +514,5 @@ func TestDetectAlreadyExistingMockApi(t *testing.T) {
 // }
 
 // func TestGetUuid(t *testing.T) {
-// 	// TODO compelte test
-// }
-
-// func TestAddMockApiToMap(t *testing.T) {
 // 	// TODO compelte test
 // }
