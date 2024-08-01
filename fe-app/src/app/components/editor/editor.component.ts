@@ -17,6 +17,7 @@ import { EditorService } from '@services/editor';
 import { MockApiService } from '@services/mockApiService';
 import { HttpErrorResponse } from '@angular/common/http';
 import { isEqual } from 'lodash';
+import { catchError, Observable, tap } from 'rxjs';
 
 
 @Component({
@@ -27,9 +28,9 @@ import { isEqual } from 'lodash';
 export class EditorComponent implements OnInit {
   @ViewChild('monacoDivTag', { static: true }) _editorContainer!: ElementRef;
   @ViewChild('jqxNotification', { static: false }) jqxNotification!: jqxNotificationComponent;
-  
+
   public codeEditorInstance!: monaco.editor.IStandaloneCodeEditor;
-  public isSaveButtonEnabled : boolean = true
+  public isSaveButtonEnabled: boolean = true
 
   private _selectedResObj: ResourceObject = new ResourceObject()
   private _isSelectedMockApiNew: boolean = true
@@ -58,7 +59,7 @@ export class EditorComponent implements OnInit {
     this.mockApiService.newMockApiSelectedObservable().subscribe({
       next: (resObj: ResourceObject) => {
         this._selectedResObj = resObj
-        this._isSelectedMockApiNew = isEqual(resObj,new ResourceObject())
+        this._isSelectedMockApiNew = isEqual(resObj, new ResourceObject())
         this.codeEditorInstance.setValue(JSON.stringify(resObj.data, null, 2))
       },
       error: (err: Error) => {
@@ -73,10 +74,10 @@ export class EditorComponent implements OnInit {
         this._selectedResObj.data = JSON.parse(this.codeEditorInstance.getValue())
       });
     }
-    
+
     // enable/diable save button based on the json validation schema
     if (this.codeEditorInstance.getModel() != null) {
-      monaco.editor.onDidChangeMarkers( _ => {
+      monaco.editor.onDidChangeMarkers(_ => {
         // enable save button only if there is no error in the JSON
         if (monaco.editor.getModelMarkers({}).length === 0) {
           this.isSaveButtonEnabled = true
@@ -98,14 +99,14 @@ export class EditorComponent implements OnInit {
         fileMatch: ["*"],
         schema: {
           type: 'object',
-          properties : {
+          properties: {
             name: {
               type: 'string'
             },
-            url : {
+            url: {
               type: 'string'
             },
-            responses : {
+            responses: {
               type: 'object',
               properties: {
                 get: {
@@ -121,10 +122,10 @@ export class EditorComponent implements OnInit {
                   type: 'object'
                 },
               },
-              minProperties : 1
+              minProperties: 1
             },
           },
-          required : [
+          required: [
             "name",
             "url",
             "responses"
@@ -132,7 +133,7 @@ export class EditorComponent implements OnInit {
           "additionalProperties": false
         }
       }
-    ]
+      ]
     });
   }
 
@@ -141,45 +142,87 @@ export class EditorComponent implements OnInit {
       return
     }
     if (this._isSelectedMockApiNew) {
-      this.mockApiService.postMockApi(this._selectedResObj.data).pipe().subscribe({
-        error: (err : HttpErrorResponse) => {
-          const toNotify = err.error as DynamockerBackendErrorMessageI
-          this.notify(toNotify.error_msg, notificationLevel.error)
-          },
-        complete: () => {
-          const msg = "MockApi succesfully created"
-          this.notify(msg, notificationLevel.info)
-          this.mockApiService.refreshList()
-          this.editorService.unsavedModifications = true
-          let newResObj = new ResourceObject()
-          this.mockApiService.selectMockApi(newResObj)
-          this._isSelectedMockApiNew = true
-        }
-      }
-    )
-  } else {
-    this.mockApiService.putMockApi(this._selectedResObj).pipe().subscribe({
-      error: (err : HttpErrorResponse) => {
-        const toNotify = err.error as DynamockerBackendErrorMessageI
-        this.notify(toNotify.error_msg, notificationLevel.error)
-        },
-        complete: () => {
-          const msg = "MockAPi succesfullly modified"
-          this.notify(msg, notificationLevel.info)
-          this.editorService.unsavedModifications = false
-          this.mockApiService.refreshList()
-        }
-      }
-      )
+      // get all the mock apis
+      this.mockApiService.getAllMockApis().pipe(
+        tap((res) => {
+          // range over the Resource Objects (mockApis)
+          for (let i = 0; i < res.length; i++) {
+            const element = res[i];
+            // if it has the same name
+            if (element.data.name == this._selectedResObj.data.name) {
+              // add the notification (warning) and return
+              this.notify("found another mockApi using the same name", notificationLevel.error)
+              return
+              // if it has the same url
+            } else if (element.data.url == this._selectedResObj.data.url) {
+              // add the notification (warning) and return
+              this.notify("found another mockApi using the same url", notificationLevel.error)
+              return
+            }
+          }
+          // if not returned yet, go on with the post request
+          this.mockApiService.postMockApi(this._selectedResObj.data).subscribe({
+            error: (err: string) => {
+              console.log(err)
+            },
+            complete: () => {
+              const msg = "MockApi succesfully created"
+              this.notify(msg, notificationLevel.info)
+              this.mockApiService.refreshList()
+              this.editorService.unsavedModifications = true
+              let newResObj = new ResourceObject()
+              this.mockApiService.selectMockApi(newResObj)
+              this._isSelectedMockApiNew = true
+            }
+          })
+        })
+      ).subscribe()
+    } else {
+      // get all the mock apis
+      this.mockApiService.getAllMockApis().pipe(
+        tap((res) => {
+          // range over the Resource Objects (mockApis)
+          console.log(res)
+          for (let i = 0; i < res.length; i++) {
+            const element = res[i];
+            // if it has the same name
+            if (element.data.name == this._selectedResObj.data.name) {
+              // add the notification (warning) and return
+              console.log("name")
+              this.notify("Found another mockApi using the same name. Cannot save the MockApi", notificationLevel.error)
+              return
+              // if it has the same url
+            } else if (element.data.url == this._selectedResObj.data.url) {
+              // add the notification (warning) and return
+              console.log("url")
+              this.notify("Found another mockApi using the same url. Cannot save the MockApi", notificationLevel.error)
+              return
+            }
+          }
+          // if not returned yet, go on with the post request
+          this.mockApiService.putMockApi(this._selectedResObj).subscribe({
+            error: (err: HttpErrorResponse) => {
+              const toNotify = err.error as DynamockerBackendErrorMessageI
+              this.notify(toNotify.error_msg, notificationLevel.error)
+            },
+            complete: () => {
+              const msg = "MockAPi succesfullly modified"
+              this.notify(msg, notificationLevel.info)
+              this.editorService.unsavedModifications = false
+              this.mockApiService.refreshList()
+            }
+          })
+        })
+      ).subscribe()
 
     }
   }
-  
+
   notify(msg: string, level: notificationLevel): void {
     console.log(this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content'))
     this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = msg;
     // console.log(this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer'))
     // this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer').classList.add(level)
     this.jqxNotification.open();
-};
+  };
 }

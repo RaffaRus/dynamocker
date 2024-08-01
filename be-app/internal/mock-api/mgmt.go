@@ -79,7 +79,6 @@ func GetApiByName(name string) (*common.MockApi, bool) {
 			return mockApi, true
 		}
 	}
-	log.Errorf("no match for mockApi name '%s'", name)
 	return nil, false
 }
 
@@ -91,7 +90,6 @@ func GetApiByUrl(url string) (*common.MockApi, bool) {
 			return mockApi, true
 		}
 	}
-	log.Errorf("no match for mockApi URL '%s'", url)
 	return nil, false
 }
 
@@ -223,6 +221,20 @@ func detectedNewMockApi(fileName string) {
 		return
 	}
 
+	// TODO: create test
+	// check if another mockApi has the same name or url
+	_, found := GetApiByName(mockApi.Name)
+	if found {
+		log.Error("found another mockApi with the same name. the new mockApi won't be loaded")
+		return
+	}
+
+	_, found = GetApiByUrl(mockApi.URL)
+	if found {
+		log.Error("found another mockApi with the same URL. the new mockApi won't be loaded")
+		return
+	}
+
 	// parse uuid into a uint16
 	uuidString, found := strings.CutSuffix(fileName, ".json")
 	if !found {
@@ -233,6 +245,7 @@ func detectedNewMockApi(fileName string) {
 	if err != nil {
 		err := fmt.Errorf("error while parsing uuid of the mockApi file '%s' into uint16", fileName)
 		log.Error(err)
+		return
 	}
 	uuid := uint16(mockApiUuid64)
 

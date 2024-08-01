@@ -63,7 +63,7 @@ func getMockApis(w http.ResponseWriter, r *http.Request) {
 	mockApis := mockapipkg.GetMockApiList()
 	var resourceObjects []ResourceObject = make([]ResourceObject, 0)
 	for uuid, mockApi := range mockApis {
-		resourceObjects = append(resourceObjects, ResourceObject{ObjId: uuid, ObjType: MockApiArrayType, ObtData: mockApi})
+		resourceObjects = append(resourceObjects, ResourceObject{ObjId: uuid, ObjType: MockApiType, ObtData: mockApi})
 	}
 	encodeJson(resourceObjects, w)
 }
