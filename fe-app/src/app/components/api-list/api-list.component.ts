@@ -2,8 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 
 // Model
-import { IMockApi } from '@models/mockApi.model';
-import { initialMockApiJson } from '@models/editor.model';
+import { ResourceObject } from '@models/mockApi.model';
 
 // Service
 import { MockApiService } from '@services/mockApiService';
@@ -17,7 +16,7 @@ import { MockApiService } from '@services/mockApiService';
 export class ApiListComponent implements OnInit{ 
 
   // list of mock apis
-  _apiList: IMockApi[] = []
+  _resObjList: ResourceObject[] = []
 
   constructor(
     private mockApiService : MockApiService
@@ -28,7 +27,7 @@ export class ApiListComponent implements OnInit{
     // get the mock apis for the first time
     this.mockApiService.getAllMockApis().subscribe({
       next: (value) => {
-        this._apiList = value
+        this._resObjList = value
       },
       error: (err) => {
         console.error(err)
@@ -38,13 +37,10 @@ export class ApiListComponent implements OnInit{
     // subscribe to the refresh list observable
     this.mockApiService.refreshListObservable().subscribe({
       next: () => {
-        console.log("requested refresh mock api list")
         // if a new event has been emitted, then get againg the mock api list
         this.mockApiService.getAllMockApis().subscribe({
           next: (value) => {
-            console.log(value)
-            this._apiList = value
-            console.log(this._apiList)
+            this._resObjList = value
           },
           error: (err) => {
             console.error(err)
@@ -62,8 +58,8 @@ export class ApiListComponent implements OnInit{
   newItem() {
     // TODO: add notification with confirmation if smt in the editor is modified and not saved
     // create an empty element, add it to the list and open it in the editor
-    let newMockApiModel = initialMockApiJson
-    this.mockApiService.selectMockApi(newMockApiModel)
+    let newResObj = new ResourceObject()
+    this.mockApiService.selectMockApi(newResObj)
   }
 
 }

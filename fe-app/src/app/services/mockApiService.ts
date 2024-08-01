@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { initialMockApiJson } from "@models/editor.model";
-import { IMockApi, IModifiedMockApi } from "@models/mockApi.model";
+import { ResourceObject } from '@models/mockApi.model';
+import { IMockApi, IResourceObject } from "@models/mockApi.model";
 import { BehaviorSubject, Observable } from "rxjs";
 
 @Injectable()
@@ -11,18 +11,17 @@ export class MockApiService {
     private MOCK_APIS = '/mock-apis'; 
     private MOCK_API = '/mock-api';
     
-    private newMockApiSub : BehaviorSubject<IMockApi> = new BehaviorSubject<IMockApi>(initialMockApiJson)
+    private newMockApiSub : BehaviorSubject<IResourceObject> = new BehaviorSubject<IResourceObject>(new ResourceObject())
     private refreshListSub : BehaviorSubject<null> = new BehaviorSubject<null>(null)
 
     constructor(private httpClient: HttpClient) { }
 
-    newMockApiSelectedObservable() : Observable<IMockApi> {
+    newMockApiSelectedObservable() : Observable<IResourceObject> {
         return this.newMockApiSub.asObservable()
     }
 
-    selectMockApi(mockApi : IMockApi) {
-        this.newMockApiSub.next(mockApi)
-        console.log("item selected")
+    selectMockApi(resObj: IResourceObject) {
+        this.newMockApiSub.next(resObj)
     }
 
     refreshListObservable() {
@@ -30,33 +29,32 @@ export class MockApiService {
     }
     
     refreshList() {
-        console.log("someone requested a refresh of the list")
         this.refreshListSub.next(null)
     }
 
-    getAllMockApis() : Observable<IMockApi[] > {
+    getAllMockApis() : Observable<IResourceObject[] > {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_APIS
-        return this.httpClient.get<IMockApi[] >(url)
+        return this.httpClient.get<IResourceObject[] >(url)
     }
 
-    deleteMockApi(mockApiName : string) : Observable<null> {
-        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" + mockApiName
+    deleteMockApi(mockApiUuid :number) : Observable<null> {
+        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" + mockApiUuid
         return this.httpClient.delete<null>(url)
     }
 
-    getMockApi(mockApiName : string) : Observable<IMockApi > {
-        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApiName
-        return this.httpClient.get<IMockApi >(url)
+    getMockApi(mockApiUuid : string) : Observable<IResourceObject > {
+        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApiUuid
+        return this.httpClient.get<IResourceObject>(url)
     }
     
     postMockApi(mockApi : IMockApi) : Observable<null> {
-        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.name
+        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API
         return this.httpClient.post<null>(url, JSON.stringify(mockApi))
     }
     
-    putMockApi(mockApi : IMockApi) : Observable<null> {
-        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  mockApi.name
-        return this.httpClient.put<null>(url, JSON.stringify(mockApi))
+    putMockApi(resObj : IResourceObject) : Observable<null> {
+        let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API + "/" +  resObj.id
+        return this.httpClient.put<null>(url, JSON.stringify(resObj.data))
     }
 
 }

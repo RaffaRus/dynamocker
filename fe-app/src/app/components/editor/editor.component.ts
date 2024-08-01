@@ -8,14 +8,15 @@ import * as monaco from 'monaco-editor';
 import { jqxNotificationComponent } from 'jqwidgets-ng/jqxnotification';
 
 // Models
-import { IMockApi } from '@models/mockApi.model';
-import { initialMockApiJson, initialMockApiJsonString, notificationLevel } from '@models/editor.model';
+import { ResourceObject } from '@models/mockApi.model';
+import { initialMockApiJsonString, notificationLevel } from '@models/editor.model';
 import { DynamockerBackendErrorMessageI } from '@models/httpError.model';
 
 // Services
 import { EditorService } from '@services/editor';
 import { MockApiService } from '@services/mockApiService';
 import { HttpErrorResponse } from '@angular/common/http';
+import { isEqual } from 'lodash';
 
 
 @Component({
@@ -30,7 +31,7 @@ export class EditorComponent implements OnInit {
   public codeEditorInstance!: monaco.editor.IStandaloneCodeEditor;
   public isSaveButtonEnabled : boolean = true
 
-  private _selectedMockApi: IMockApi = initialMockApiJson
+  private _selectedResObj: ResourceObject = new ResourceObject()
   private _isSelectedMockApiNew: boolean = true
 
   constructor(
@@ -55,10 +56,10 @@ export class EditorComponent implements OnInit {
 
     // subscribe to "new_mock_api_selected"
     this.mockApiService.newMockApiSelectedObservable().subscribe({
-      next: (mockApi: IMockApi) => {
-        this._selectedMockApi = mockApi
-        this._isSelectedMockApiNew = mockApi == initialMockApiJson
-        this.codeEditorInstance.setValue(JSON.stringify(mockApi, null, 2))
+      next: (resObj: ResourceObject) => {
+        this._selectedResObj = resObj
+        this._isSelectedMockApiNew = isEqual(resObj,new ResourceObject())
+        this.codeEditorInstance.setValue(JSON.stringify(resObj.data, null, 2))
       },
       error: (err: Error) => {
         console.error("received error from newMockApiSelectedObservable subscription: ", err)
@@ -67,15 +68,15 @@ export class EditorComponent implements OnInit {
 
     // set the editor property 'unsavedModifications' as true
     if (this.codeEditorInstance.getModel() != null) {
-      this.codeEditorInstance.getModel()!.onDidChangeContent((event) => {
+      this.codeEditorInstance.getModel()!.onDidChangeContent((_) => {
         this.editorService.unsavedModifications = true
-        this._selectedMockApi = JSON.parse(this.codeEditorInstance.getValue())
+        this._selectedResObj.data = JSON.parse(this.codeEditorInstance.getValue())
       });
     }
     
     // enable/diable save button based on the json validation schema
     if (this.codeEditorInstance.getModel() != null) {
-      monaco.editor.onDidChangeMarkers( event => {
+      monaco.editor.onDidChangeMarkers( _ => {
         // enable save button only if there is no error in the JSON
         if (monaco.editor.getModelMarkers({}).length === 0) {
           this.isSaveButtonEnabled = true
@@ -140,7 +141,7 @@ export class EditorComponent implements OnInit {
       return
     }
     if (this._isSelectedMockApiNew) {
-      this.mockApiService.postMockApi(this._selectedMockApi).pipe().subscribe({
+      this.mockApiService.postMockApi(this._selectedResObj.data).pipe().subscribe({
         error: (err : HttpErrorResponse) => {
           const toNotify = err.error as DynamockerBackendErrorMessageI
           this.notify(toNotify.error_msg, notificationLevel.error)
@@ -148,14 +149,16 @@ export class EditorComponent implements OnInit {
         complete: () => {
           const msg = "MockApi succesfully created"
           this.notify(msg, notificationLevel.info)
-          this.editorService.unsavedModifications = false
           this.mockApiService.refreshList()
-          this._isSelectedMockApiNew = false
+          this.editorService.unsavedModifications = true
+          let newResObj = new ResourceObject()
+          this.mockApiService.selectMockApi(newResObj)
+          this._isSelectedMockApiNew = true
         }
       }
     )
   } else {
-    this.mockApiService.putMockApi(this._selectedMockApi).pipe().subscribe({
+    this.mockApiService.putMockApi(this._selectedResObj).pipe().subscribe({
       error: (err : HttpErrorResponse) => {
         const toNotify = err.error as DynamockerBackendErrorMessageI
         this.notify(toNotify.error_msg, notificationLevel.error)

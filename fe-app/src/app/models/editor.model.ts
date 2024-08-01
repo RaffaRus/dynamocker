@@ -1,5 +1,3 @@
-import { IMockApi } from './mockApi.model';
-
 export const initialMockApiJsonString : string = [
     '{',
     '    "name": "",',
@@ -12,8 +10,6 @@ export const initialMockApiJsonString : string = [
     '     }',
     '}'
   ].join('\n')
-
-export const initialMockApiJson : IMockApi = JSON.parse(initialMockApiJsonString)
 
 export const enum  notificationLevel {
     info = 1, 

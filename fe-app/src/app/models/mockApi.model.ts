@@ -1,3 +1,11 @@
+import { initialMockApiJsonString } from "./editor.model"
+
+export interface  IResourceObject {
+    id : number
+    type : string
+    data: IMockApi
+}
+
 export interface  IMockApi {
     name :string
     url: string
@@ -25,3 +33,9 @@ interface IModifiedResponse {
     delete?: string
     post?: string
 }
+
+export class ResourceObject implements IResourceObject {
+    id = -1
+    type = "mockApi"
+    data = JSON.parse(initialMockApiJsonString)
+  }

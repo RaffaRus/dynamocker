@@ -12,7 +12,7 @@ const (
 	DELETE           Method = http.MethodDelete
 	OPTIONS          Method = http.MethodOptions
 	MockApiArrayType string = "arrayOfMockApis"
-	MockApiType      string = "mockApis"
+	MockApiType      string = "mockApi"
 )
 
 type ApiInterface interface {
