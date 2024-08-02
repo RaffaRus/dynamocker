@@ -17,7 +17,7 @@ import { EditorService } from '@services/editor';
 import { MockApiService } from '@services/mockApiService';
 import { HttpErrorResponse } from '@angular/common/http';
 import { isEqual } from 'lodash';
-import { catchError, Observable, tap } from 'rxjs';
+import { tap } from 'rxjs';
 
 
 @Component({
@@ -138,9 +138,16 @@ export class EditorComponent implements OnInit {
   }
 
   onSave() {
+    // check if the button is Enabled in TS
     if (!this.isSaveButtonEnabled) {
       return
     }
+    // check if the content is empty
+    if (isEqual(this._selectedResObj, new ResourceObject())) {
+      this.notify("The JSON is empty", notificationLevel.error)
+      return
+    }
+    // post or patch based on whether the api is a new one or not
     if (this._isSelectedMockApiNew) {
       // get all the mock apis
       this.mockApiService.getAllMockApis().pipe(
@@ -151,12 +158,12 @@ export class EditorComponent implements OnInit {
             // if it has the same name
             if (element.data.name == this._selectedResObj.data.name) {
               // add the notification (warning) and return
-              this.notify("found another mockApi using the same name", notificationLevel.error)
+              this.notify("Found another mockApi using the same name", notificationLevel.error)
               return
               // if it has the same url
             } else if (element.data.url == this._selectedResObj.data.url) {
               // add the notification (warning) and return
-              this.notify("found another mockApi using the same url", notificationLevel.error)
+              this.notify("Found another mockApi using the same url", notificationLevel.error)
               return
             }
           }
@@ -181,6 +188,10 @@ export class EditorComponent implements OnInit {
       // get all the mock apis
       this.mockApiService.getAllMockApis().pipe(
         tap((res) => {
+          console.log(res)
+          // remove current mockApi from the array
+          res = res.filter(resObj => !(resObj.id === this._selectedResObj.id))
+          
           // range over the Resource Objects (mockApis)
           console.log(res)
           for (let i = 0; i < res.length; i++) {
@@ -220,9 +231,39 @@ export class EditorComponent implements OnInit {
 
   notify(msg: string, level: notificationLevel): void {
     console.log(this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content'))
-    this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = msg;
-    // console.log(this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer'))
-    // this.jqxNotification.elementRef.nativeElement.querySelector('.notificationContainer').classList.add(level)
+    
+    // retreive the HTML element
+    let notificationHtmlElement = document.getElementsByClassName('notification') as HTMLCollectionOf<HTMLElement>;
+    // switch the style of the HTML element based on the notification level
+    console.log(notificationHtmlElement)
+    console.log(level)
+    switch (level) {
+      // Info
+      case 1:
+        console.log("case 1")
+        this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = "INFO: " + msg;
+        // notificationHtmlElement[0].style.color = "var(--darkblue)";
+        notificationHtmlElement[0].style.backgroundColor = "var(--azzurro)";
+        break;
+      // Warning
+      case 2:
+        console.log("case 2")
+        this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = "WARNING: " + msg;
+        // notificationHtmlElement[0].style.color = "var(--darkblue)";
+        notificationHtmlElement[0].style.backgroundColor = "var(--lightyellow)";
+        break;
+      // Error
+      case 3:
+        console.log("case 3")
+        this.jqxNotification.elementRef.nativeElement.querySelector('.jqx-notification-content').innerHTML = "ERROR: " +  msg;
+        // notificationHtmlElement[0].style.color = "var(--darkblue)";
+        notificationHtmlElement[0].style.backgroundColor = "var(--red)";
+        break;
+      default:
+        console.error("could not recognize the notification level")
+        break;
+    }
+
     this.jqxNotification.open();
   };
 }

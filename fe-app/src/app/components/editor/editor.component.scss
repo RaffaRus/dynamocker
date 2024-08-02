@@ -3,7 +3,7 @@
     box-sizing: border-box;
     height: calc(100vh - 162px - 3px - 42px);
     border: 2px solid;
-    border-color: #f0ead2;
+    border-color: var(--yellow);
     border-radius: 19px;
 }
 
@@ -48,19 +48,11 @@
 }
 
 .notification {
+    float: left;
     width: 80%;
-}
-
-.info {
-    color: var(--azzurro);
-}
-
-.warning {
-    color: yellow;
-    font-weight: bold;
-}
-
-.error {
-    color: red;
-    font-weight: bold;
+    margin: 8px;
+    border-radius: 12px;
+    padding-right: 5px;
+    padding-left: 5px;
+    
 }

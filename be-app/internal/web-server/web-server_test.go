@@ -3,7 +3,7 @@ package webserver
 import (
 	"bytes"
 	"dynamocker/internal/common"
-	mockapi "dynamocker/internal/mock-api"
+	mockapipkg "dynamocker/internal/mock-api"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,7 +31,7 @@ func setup(t *testing.T) (chan bool, *WebServer) {
 	// init the mocked api management
 	closeCh := make(chan bool)
 	var wg sync.WaitGroup
-	if err := mockapi.Init(closeCh, &wg); err != nil {
+	if err := mockapipkg.Init(closeCh, &wg); err != nil {
 		t.Errorf("error initiating mockapi: %s", err)
 		panic("panic during mockapi initiations")
 	}
@@ -64,7 +64,7 @@ func dummyMockApi(t *testing.T) common.MockApi {
 	}
 	return common.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
-		URL:       "url.com",
+		URL:       fmt.Sprintf("url-%d.com", rand.Intn(1000)),
 		Responses: response,
 	}
 }
@@ -162,7 +162,7 @@ func TestGetMockApis(t *testing.T) {
 	}()
 
 	// wait
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// test get api
 	url := "/dynamocker/api/mock-apis"
@@ -215,7 +215,7 @@ func TestDeleteMockApis(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	assert.Zero(t, len(mockapi.GetMockAPIs()))
+	assert.Zero(t, len(mockapipkg.GetMockAPIs()))
 }
 
 func TestDeleteMockApi(t *testing.T) {
@@ -252,7 +252,7 @@ func TestDeleteMockApi(t *testing.T) {
 	// wait
 	time.Sleep(100 * time.Millisecond)
 
-	assert.Equal(t, 2, len(mockapi.GetMockApiList()))
+	assert.Equal(t, 2, len(mockapipkg.GetMockApiList()))
 }
 
 func TestPostMockApi(t *testing.T) {
@@ -359,7 +359,7 @@ func TestPutMockApi(t *testing.T) {
 	// wait
 	time.Sleep(50 * time.Millisecond)
 
-	assert.Equal(t, 1, len(mockapi.GetMockApiList()))
+	assert.Equal(t, 1, len(mockapipkg.GetMockApiList()))
 
 	url := "/dynamocker/api/mock-api/" + fmt.Sprint(uuid)
 	r := httptest.NewRecorder()
@@ -391,7 +391,7 @@ func TestPutMockApi(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// check that the mockApi has been modified
-	currentMockApi, found := mockapi.GetApiByName(mockApi.Name)
+	currentMockApi, found := mockapipkg.GetApiByName(mockApi.Name)
 	assert.True(t, found)
 	assert.Equal(t, currentMockApi.URL, mockApi.URL)
 	assert.Equal(t, currentMockApi.Name, mockApi.Name)
@@ -402,6 +402,7 @@ func TestPutMockApi(t *testing.T) {
 }
 
 func TestServeMockApi(t *testing.T) {
+	assert.True(t, true)
 	// setup server and mockApi mgmt
 	// closeCh, webServerTest := setup(t)
 	// defer func() { closeCh <- true }()

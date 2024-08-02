@@ -5,7 +5,7 @@
 ##
 
 # specify the image used to build the UI
-FROM node:20-alpine3.18 as BUILD-UI
+FROM node:20-alpine3.18 AS build-ui
 
 # create a working directory inside the image
 WORKDIR /app
@@ -27,7 +27,7 @@ FROM nginx:1.21-alpine
 WORKDIR /
 
 #  copy js project
-COPY --from=BUILD-UI /app/dist/ /usr/share/nginx/html
+COPY --from=build-ui /app/dist/ /usr/share/
 
 # copy nginx config
 COPY docker/nginx-dynamocker.conf /etc/nginx/conf.d/default.conf

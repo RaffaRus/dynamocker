@@ -26,8 +26,11 @@ export class ApiListItemComponent implements OnInit{
 
   onSelectedItem(){
     // check that the mockApi in the editor is saved, otherwise raise notitfication
-
-    this.mockApiService.selectMockApi(this.resObj)
+    let newResObj = new ResourceObject()
+    newResObj.data = this.resObj.data
+    newResObj.id = this.resObj.id
+    newResObj.type = this.resObj.type
+    this.mockApiService.selectMockApi(newResObj)
   }
   
   mockApiResponses(): string[] {

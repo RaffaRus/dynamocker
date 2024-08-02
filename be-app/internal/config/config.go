@@ -14,7 +14,7 @@ const (
 	portEnv               = "DYNA_SERVER_PORT"
 	portEnvDefault        = "8150"
 	folderEnv             = "DYNA_MOCK_API_FOLDER"
-	folderEnvDefault      = "/var/dynamocker/mocks/"
+	folderEnvDefault      = "/mocks/"
 	pollerIntervalEnv     = "POLLER_INTERVAL"
 	pollerIntervalDefault = "60" // seconds
 )
@@ -35,7 +35,7 @@ func ReadVars() {
 			log.Infof("found the %s env variable with value = %s\n", env, val)
 			envVarList[env] = val
 		} else {
-			log.Infof("env variable %s not found, using default value = %s\n", env, envVarList[env])
+			log.Infof("env variable %s not found, using default value = %s", env, envVarList[env])
 		}
 	}
 }

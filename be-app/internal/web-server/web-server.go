@@ -47,7 +47,7 @@ func NewServer() (*WebServer, error) {
 func (ws WebServer) Start(closeCh chan bool, wg *sync.WaitGroup) {
 
 	srv := &http.Server{
-		Addr:         "127.0.0.1:" + ws.webPort,
+		Addr:         "0.0.0.0:" + ws.webPort,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  20 * time.Second,

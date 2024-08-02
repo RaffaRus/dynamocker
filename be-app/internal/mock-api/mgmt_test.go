@@ -39,7 +39,7 @@ func dummyMockApi(t *testing.T) common.MockApi {
 	}
 	return common.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
-		URL:       "url.com",
+		URL:       fmt.Sprintf("url.com-%d", rand.Intn(1000)),
 		Responses: response,
 	}
 }
@@ -345,6 +345,10 @@ func TestObserveFolder(t *testing.T) {
 
 	// modify the file
 	mockApi.URL = "newUrl.com"
+	mockApi.Responses.Get = &map[string]interface{}{}
+	mockApi.Responses.Post = &map[string]interface{}{}
+	mockApi.Responses.Patch = &map[string]interface{}{}
+	mockApi.Responses.Delete = &map[string]interface{}{}
 	if json.Unmarshal([]byte(`{"new_delete":"body"}`), &mockApi.Responses.Delete) != nil {
 		t.Fatal("error while unmarshalling")
 	}

@@ -34,6 +34,9 @@ func Init(closeAll chan bool, wg *sync.WaitGroup) error {
 
 	// load the stored APIs for the first time
 	mockApiList, err = mockapifilepkg.LoadAPIsFromFolder()
+	for uuid := range mockApiList {
+		log.Infof("mockApi %d was succesfully loaded", uuid)
+	}
 	if err != nil {
 		return err
 	}
@@ -71,6 +74,7 @@ func GetMockApiList() map[uint16]*common.MockApi {
 	return mockApiList
 }
 
+// TODO: create test
 // look for the mockApi whose name mathes the arg passed id. It
 // returns the mockApi and true/false if found or not
 func GetApiByName(name string) (*common.MockApi, bool) {
@@ -82,6 +86,7 @@ func GetApiByName(name string) (*common.MockApi, bool) {
 	return nil, false
 }
 
+// TODO: create test
 // look for the mockApi whose url mathes the arg passed id. It
 // returns the mockApi and true/false if found or not
 func GetApiByUrl(url string) (*common.MockApi, bool) {
@@ -131,7 +136,7 @@ detectingCycle:
 			// any modification to the api file
 			if event.Has(fsnotify.Write) {
 				log.Debug("modified json detected in the folder: ", fileName)
-				detectedNewMockApi(fileName)
+				detectedModifiedMockApi(fileName)
 			}
 			// removed api file
 			if event.Has(fsnotify.Remove) {
@@ -189,7 +194,7 @@ pollingCycle:
 	}
 }
 
-func detectedNewMockApi(fileName string) {
+func detectedModifiedMockApi(fileName string) {
 
 	// open file
 	jsonFile, err := os.Open(folderPath + fileName)
@@ -221,20 +226,6 @@ func detectedNewMockApi(fileName string) {
 		return
 	}
 
-	// TODO: create test
-	// check if another mockApi has the same name or url
-	_, found := GetApiByName(mockApi.Name)
-	if found {
-		log.Error("found another mockApi with the same name. the new mockApi won't be loaded")
-		return
-	}
-
-	_, found = GetApiByUrl(mockApi.URL)
-	if found {
-		log.Error("found another mockApi with the same URL. the new mockApi won't be loaded")
-		return
-	}
-
 	// parse uuid into a uint16
 	uuidString, found := strings.CutSuffix(fileName, ".json")
 	if !found {
@@ -249,9 +240,61 @@ func detectedNewMockApi(fileName string) {
 	}
 	uuid := uint16(mockApiUuid64)
 
+	// check if mockApi is a new one or not
+	_, found = mockApiList[uuid]
+
+	// TODO: add test of this part
+	if found {
+		// this is a modification done on an existing mock Api
+
+		// save previous stage of mockApiList, remove the modified mockApi from
+		// the mockApiList and check if the modified mockApiList contains any
+		// mockApi that duplicates the name or the url of the modified mockApi
+		tmpMockApiList := mockApiList
+		delete(mockApiList, uuid)
+
+		// check if another mockApi has the same name of the modified mock Api
+		_, found := GetApiByName(mockApi.Name)
+		if found {
+			log.Error("Found another mockApi with the same name of the modified one. The mockApi won't be modifed")
+			mockApiList = tmpMockApiList
+			return
+		}
+
+		// check if another mockApi has the same url of the modified mock Api
+		_, found = GetApiByUrl(mockApi.URL)
+		if found {
+			log.Error("Found another mockApi with the same URL of the modified one. The mockApi won't be modifed")
+			mockApiList = tmpMockApiList
+			return
+		}
+
+		// add the new mock to the list
+		mockApiList[uuid] = &mockApi
+
+		log.Infof("mockApi %d was succesfully loaded", uuid)
+
+	} else {
+		// this is a new mock Api
+
+		// check if another mockApi has the same name or url
+		_, found := GetApiByName(mockApi.Name)
+		if found {
+			log.Error("found another mockApi with the same name. the new mockApi won't be loaded")
+			return
+		}
+
+		_, found = GetApiByUrl(mockApi.URL)
+		if found {
+			log.Error("found another mockApi with the same URL. the new mockApi won't be loaded")
+			return
+		}
+	}
+
 	// add it to the list
 	mockApiList[uuid] = &mockApi
 
+	log.Infof("mockApi %d was succesfully modified", uuid)
 }
 
 // function called once a json mock api file has been removed from the folder
