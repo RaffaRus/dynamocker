@@ -1,0 +1,13 @@
+services:
+  dynamocker-be:
+    image: raffarus/dynamocker-be:0.0.1
+    ports:
+    - ${BE_PORT}:8150
+    volumes:
+    - ${MOCK_API_FOLDER}:/mocks
+  dynamocker-fe:
+    image: raffarus/dynamocker-fe:0.0.1
+    ports:
+    - ${FE_PORT}:8151
+    depends_on:
+    - dynamocker-be

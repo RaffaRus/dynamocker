@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ print .Chart.Name "-deployment" }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+      - name: fe
+        image: {{ print (default "raffarus/" .Values.repository) (default "dynamocker-fe" .Values.images.feImage) ":" (default "0.0.1" .Values.images.feTag)  }}
+        ports:
+        - containerPort: {{ default 8151 .Values.beService.port }}
+        labels:
+          tier: fe
+      - name: be
+        image: {{ print (default "raffarus/" .Values.repository) (default "dynamocker-be" .Values.images.beImage) ":" (default "0.0.1" .Values.images.beTag)  }}
+        ports:
+        - containerPort: {{ default 8150 .Values.beService.port }}
+        labels:
+          tier: fe
