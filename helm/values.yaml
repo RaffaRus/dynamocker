@@ -8,42 +8,13 @@ images:
   feImage: dynamocker-fe
   feTag : 0.0.1
 
-imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-serviceAccount:
-
-  create: true
-  
-  annotations: {}
-  
-  name:
-
-podSecurityContext: {}
-
-securityContext: {}
-
 feService:
-  type: ClusterIP
   port: 8151
+  nodePort: 31518
 
 beService:
-  type: ClusterIP
   port: 8150
-
-ingress:
-  enabled: false
-  annotations: {}
-  hosts:
-    - host: chart-example.local
-      paths: []
-  tls: []
-
-resources: {}
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
+  nodePort: 30518

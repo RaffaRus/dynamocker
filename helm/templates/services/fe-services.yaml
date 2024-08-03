@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ .Chart.Name }}-fe-service'
+spec:
+  selector:
+    tier: fe
+  type : NodePort
+  ports:
+  - name: fe-port
+    port: {{ default 8151 .Values.feService.port }}
+    nodePort : {{ default 31518 .Values.feService.NodePort }}
+    targetPort: 8151

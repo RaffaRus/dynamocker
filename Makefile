@@ -17,5 +17,8 @@ docker-compose-build-up:
 docker-compose-image-up:
 		docker compose -f docker/docker-compose-image.yml --env-file docker/.env up -d
 		
+docker-compose-image-down:
+		docker compose -f docker/docker-compose-image.yml --env-file docker/.env down
+
 docker-compose-image-push:
 		docker compose -f docker/docker-compose-image.yml --env-file docker/.env push

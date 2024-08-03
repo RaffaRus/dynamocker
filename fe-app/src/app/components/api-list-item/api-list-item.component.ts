@@ -25,7 +25,7 @@ export class ApiListItemComponent implements OnInit{
   }
 
   onSelectedItem(){
-    // check that the mockApi in the editor is saved, otherwise raise notitfication
+    // TODO: check that the mockApi in the editor is saved, otherwise raise notitfication
     let newResObj = new ResourceObject()
     newResObj.data = this.resObj.data
     newResObj.id = this.resObj.id
@@ -47,6 +47,7 @@ export class ApiListItemComponent implements OnInit{
     // delete mock api from the back end
     this.mockApiService.deleteMockApi(this.resObj.id).subscribe({
       next: (_) => {
+        // TODO: create service to manage notifications and add notification about the delete response
         // emit the requirement to refresh list
         this.mockApiService.refreshList()
       },
