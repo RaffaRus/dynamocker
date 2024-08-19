@@ -1,3 +1,5 @@
+# If you want to reach the UI while usingg minkube you have to tunnel the service:
+#  $ minikube service -n dynamocker dynamocker-chart-fe-service --url
 apiVersion: v1
 kind: Service
 metadata:

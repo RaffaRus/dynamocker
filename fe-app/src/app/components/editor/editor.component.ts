@@ -91,7 +91,6 @@ export class EditorComponent implements OnInit {
   // used to assign our custom schema for the json file corresponding to the MockApi schema
   assignDefaultJsonSchema() {
     // TODO: set empty strings as invalid
-    // TODO: make fields different than {name|url|response}
     monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
       validate: true,
       schemas: [{
