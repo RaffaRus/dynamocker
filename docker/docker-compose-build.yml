@@ -1,17 +1,25 @@
+version: "3"
 services:
   dynamocker-be:
     build:
       context: ../
       dockerfile: ./docker/be.Dockerfile
+    image: dynamocker-be
     ports:
-    - ${BE_PORT}:8150
+      - ${BE_PORT}:8150
     volumes:
-    - ${MOCK_API_FOLDER}:/mocks
+      - ${MOCK_API_FOLDER}:/mocks
+    environment:
+      - BE_PORT=${BE_PORT}
   dynamocker-fe:
     build:
       context: ../
       dockerfile: ./docker/fe.Dockerfile
+    image: dynamocker-fe
     ports:
-    - ${FE_PORT}:8151
+      - ${FE_PORT}:8151
+    environment:
+      - FE_PORT=${FE_PORT}
+      - BE_PORT=${BE_PORT}
     depends_on:
-    - dynamocker-be
+      - dynamocker-be

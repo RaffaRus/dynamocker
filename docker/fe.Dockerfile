@@ -24,6 +24,11 @@ RUN npm run build --configuration=production
 # ##
 FROM nginx:1.21-alpine
 
+ENV FE_PORT=8151
+
+# Used to redirect the requests toward the beckend
+ENV BE_PORT=8150
+
 WORKDIR /
 
 #  copy js project
@@ -33,4 +38,9 @@ COPY --from=build-ui /app/dist/ /usr/share/
 COPY docker/nginx-dynamocker.conf /etc/nginx/conf.d/default.conf
 
 # tells Docker that the container listens on specified network ports at runtime
-EXPOSE 8151
+EXPOSE ${FE_PORT}
+
+# replace the BE PORT
+RUN echo 'find . -type f -name "main.*.js" -print0 | xargs -0 sed -i "s/localhost:8150/localhost:$BE_PORT/g"' > /dynamocker-entrypoint.sh
+
+CMD ["/bin/sh", "-c", "sh dynamocker-entrypoint.sh && nginx -g 'daemon off;'"]

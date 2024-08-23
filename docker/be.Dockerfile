@@ -38,13 +38,15 @@ RUN mv build/dynamocker dynamocker/bin/
 ##
 FROM scratch
 
+ENV BE_PORT=8150
+
 WORKDIR /
 
 #  copy binary
 COPY --from=build-be /app/dynamocker .
 
 # tells Docker that the container listens on specified network ports at runtime
-EXPOSE 8150
+EXPOSE ${BE_PORT}
 
 # command to be used to execute when the image is used to start a container
 CMD [ "/bin/dynamocker" ]

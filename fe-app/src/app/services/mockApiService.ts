@@ -6,7 +6,6 @@ import { BehaviorSubject, map, Observable, tap, throwError } from "rxjs";
 @Injectable()
 export class MockApiService {
 
-    // TODO: get the BE URL from the env for helm deployment
     private MOCK_API_SERVE_URL_BASE = 'http://localhost:8150/dynamocker/api';
     private MOCK_APIS = '/mock-apis';
     private MOCK_API = '/mock-api';
