@@ -1,8 +1,0 @@
-# be
-be-app/dynamocker
-
-#fe
-fe-app/.angular
-fe-app/.vscode
-fe-app/node_modules
-fe-app/dist
