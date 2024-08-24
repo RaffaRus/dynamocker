@@ -10,6 +10,6 @@ spec:
   type : NodePort
   ports:
   - name: fe-port
-    port: {{ default 8151 .Values.feService.port }}
+    port: {{ default 8151 .Values.feService.port  }}
     nodePort : {{ default 31518 .Values.feService.NodePort }}
     targetPort: 8151

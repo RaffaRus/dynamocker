@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: fe
-        image: {{ print (default "raffarus/" .Values.repository) (default "dynamocker-fe" .Values.images.feImage) ":" (default "0.0.1" .Values.images.feTag)  }}
+        image: {{ print (default "raffarus/" .Values.repository ) (default "dynamocker-fe" .Values.images.feImage) ":" (default "0.0.1" .Values.images.feTag)  }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.images.pullPolicy }}
         ports:
         - containerPort: {{ default 8151 .Values.beService.port }}

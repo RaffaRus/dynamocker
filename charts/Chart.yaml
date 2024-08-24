@@ -1,6 +1,6 @@
 apiVersion: v2
 name: dynamocker-chart
-description: The DynaMocker chart for Kubernetes
+description: The DynaMocker chart
 
 # A chart can be either an 'application' or a 'library' chart.
 #

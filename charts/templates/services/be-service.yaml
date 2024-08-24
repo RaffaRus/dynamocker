@@ -8,6 +8,6 @@ spec:
   type : NodePort
   ports:
   - name: be-port
-    port: {{ default 8150 .Values.beService.port }}
+    port: {{ default 8150 .Values.beService.port  }}
     nodePort : {{ default 30518 .Values.beService.NodePort }}
     targetPort: 8150

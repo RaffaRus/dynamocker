@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: be
-        image: {{ print (default "raffarus/" .Values.repository) (default "dynamocker-be" .Values.images.beImage) ":" (default "0.0.1" .Values.images.beTag)  }}
+        image: {{ print (default "raffarus/" .Values.repository ) (default "dynamocker-be" .Values.images.beImage) ":" (default "0.0.1" .Values.images.beTag)  }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.images.pullPolicy }}
         ports:
         - containerPort: {{ default 8150 .Values.beService.port }}
