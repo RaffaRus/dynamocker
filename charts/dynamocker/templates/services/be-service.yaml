@@ -1,3 +1,23 @@
+# If the installation is done with minikube, then we need to have a LoadBalancer
+# type of service since this is automatically exposed by 'minikube tunnel'.
+# The BE is reacheable at '<EXTERNAL_IP>:<.Values.beService.externalPort>' .
+{{ if required ".Values.minikube.enabled required" .Values.minikube.enabled}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynamocker-be-service
+  labels:
+    app: {{ .Chart.Name }}-be-deployment
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ .Chart.Name }}
+    tier: be
+  ports:
+  - port: {{ default 8151 .Values.beService.internalPort  }}
+    protocol: TCP
+    targetPort: {{ default 8151 .Values.beService.externalPort  }}
+{{ else }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,6 +28,7 @@ spec:
   type : NodePort
   ports:
   - name: be-port
-    port: {{ default 8150 .Values.beService.port  }}
-    nodePort : {{ default 30518 .Values.beService.NodePort }}
-    targetPort: 8150
+    port: {{ default 8151 .Values.beService.internalPort  }}
+    nodePort : {{ default 31518 .Values.beService.externalPort }}
+    targetPort: 8151
+{{ end }}

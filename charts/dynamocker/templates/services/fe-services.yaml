@@ -1,5 +1,23 @@
-# If you want to reach the UI while usingg minkube you have to tunnel the service:
-#  $ minikube service -n dynamocker dynamocker-chart-fe-service --url
+# If the installation is done with minikube, then we need to have a LoadBalancer
+# type of service since this is automatically exposed by 'minikube tunnel'.
+# The FE is reacheable at '<EXTERNAL_IP>:<.Values.feService.externalPort>' .
+{{ if required ".Values.minikube.enabled required" .Values.minikube.enabled}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynamocker-fe-service
+  labels:
+    app: {{ .Chart.Name }}-fe-deployment
+spec:
+  type: LoadBalancer
+  selector:
+    app: {{ .Chart.Name }}
+    tier: fe
+  ports:
+  - port: {{ default 8151 .Values.feService.internalPort  }}
+    protocol: TCP
+    targetPort: {{ default 8151 .Values.feService.externalPort  }}
+{{ else }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,6 +28,7 @@ spec:
   type : NodePort
   ports:
   - name: fe-port
-    port: {{ default 8151 .Values.feService.port  }}
-    nodePort : {{ default 31518 .Values.feService.NodePort }}
+    port: {{ default 8151 .Values.feService.internalPort  }}
+    nodePort : {{ default 31518 .Values.feService.externalPort }}
     targetPort: 8151
+{{ end }}

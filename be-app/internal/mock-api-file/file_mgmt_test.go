@@ -27,6 +27,9 @@ func dummyMockApi(t *testing.T) common.MockApi {
 	if json.Unmarshal([]byte(`{"example_patch_body":"this is a string returned from patch operation"}`), &response.Patch) != nil {
 		t.Fatal("error while unmashaling")
 	}
+	if json.Unmarshal([]byte(`{"example_put_body":"2"}`), &response.Put) != nil {
+		t.Fatal("error while unmashaling")
+	}
 	if json.Unmarshal([]byte(`{"error":"posted an invalid element"}`), &response.Post) != nil {
 		t.Fatal("error while unmashaling")
 	}
@@ -35,7 +38,7 @@ func dummyMockApi(t *testing.T) common.MockApi {
 	}
 	return common.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
-		URL:       "url.com",
+		URL:       fmt.Sprintf("url-%d/first_segment/second_segment", rand.Intn(1000)),
 		Responses: response,
 	}
 }
@@ -258,10 +261,11 @@ func TestModifyMockApiFile(t *testing.T) {
 
 	// modify the mockApi file
 	newApi := api
-	newApi.Responses.Get = &map[string]interface{}{}
-	newApi.Responses.Post = &map[string]interface{}{}
-	newApi.Responses.Delete = &map[string]interface{}{}
-	newApi.Responses.Patch = &map[string]interface{}{}
+	newApi.Responses.Get = &common.ResponseStruct{}
+	newApi.Responses.Post = &common.ResponseStruct{}
+	newApi.Responses.Put = &common.ResponseStruct{}
+	newApi.Responses.Delete = &common.ResponseStruct{}
+	newApi.Responses.Patch = &common.ResponseStruct{}
 	if err = json.Unmarshal([]byte(`{"new_json":true,"new_body":"a new response"}`), newApi.Responses.Get); err != nil {
 		t.Fatal("error while unmarshalling")
 	}
@@ -269,6 +273,9 @@ func TestModifyMockApiFile(t *testing.T) {
 		t.Fatal("error while unmarshalling")
 	}
 	if json.Unmarshal([]byte(`{"there_you_go":"maybe","nope":false}`), newApi.Responses.Post) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"asd":"55"}`), newApi.Responses.Put) != nil {
 		t.Fatal("error while unmarshalling")
 	}
 	if json.Unmarshal([]byte(`{"still":true,"later":4,"tomorrow":"not sure"}`), newApi.Responses.Delete) != nil {

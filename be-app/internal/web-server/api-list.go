@@ -39,13 +39,14 @@ var apis []Api = []Api{
 		},
 	},
 	{
-		resource: "serve-mock-api/{url}",
+		resource: `serve-mock-api/{url:[a-zA-Z0-9=\-\/\_\.]+}`,
 		handler: map[Method]func(http.ResponseWriter, *http.Request){
 			GET:     serveMockApi,
 			OPTIONS: getOptions,
 			POST:    serveMockApi,
 			PATCH:   serveMockApi,
 			DELETE:  serveMockApi,
+			PUT:     serveMockApi,
 		},
 	},
 }
@@ -218,7 +219,7 @@ func serveMockApi(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		if len(*mockApi.Responses.Get) == 0 {
+		if len(*mockApi.Responses.Get.Array) == 0 && len(*mockApi.Responses.Get.Object) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
 			encodeJsonError(err.Error(), w, http.StatusNotFound)
@@ -227,7 +228,7 @@ func serveMockApi(w http.ResponseWriter, r *http.Request) {
 		encodeJson(mockApi.Responses.Get, w)
 		return
 	case "POST":
-		if len(*mockApi.Responses.Post) == 0 {
+		if len(*mockApi.Responses.Post.Array) == 0 && len(*mockApi.Responses.Post.Object) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
 			encodeJsonError(err.Error(), w, http.StatusNotFound)
@@ -236,7 +237,7 @@ func serveMockApi(w http.ResponseWriter, r *http.Request) {
 		encodeJson(mockApi.Responses.Post, w)
 		return
 	case "PATCH":
-		if len(*mockApi.Responses.Patch) == 0 {
+		if len(*mockApi.Responses.Patch.Array) == 0 && len(*mockApi.Responses.Patch.Object) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
 			encodeJsonError(err.Error(), w, http.StatusNotFound)
@@ -245,13 +246,22 @@ func serveMockApi(w http.ResponseWriter, r *http.Request) {
 		encodeJson(mockApi.Responses.Patch, w)
 		return
 	case "DELETE":
-		if len(*mockApi.Responses.Delete) == 0 {
+		if len(*mockApi.Responses.Delete.Array) == 0 && len(*mockApi.Responses.Delete.Object) == 0 {
 			err := fmt.Errorf("requested method not defined for this mockApi")
 			log.Error(err)
 			encodeJsonError(err.Error(), w, http.StatusNotFound)
 			return
 		}
 		encodeJson(mockApi.Responses.Delete, w)
+		return
+	case "PUT":
+		if len(*mockApi.Responses.Put.Array) == 0 && len(*mockApi.Responses.Put.Object) == 0 {
+			err := fmt.Errorf("requested method not defined for this mockApi")
+			log.Error(err)
+			encodeJsonError(err.Error(), w, http.StatusNotFound)
+			return
+		}
+		encodeJson(mockApi.Responses.Put, w)
 		return
 	}
 }

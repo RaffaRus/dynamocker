@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --base-href=/dynamocker/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -24,6 +24,7 @@
     "jqwidgets-ng": "^19.2.2",
     "monaco-editor": "^0.50.0",
     "monaco-editor-webpack-plugin": "^7.1.0",
+    "node-gyp-build-optional-packages": "^5.2.2",
     "rxjs": "~7.8.0",
     "style-loader": "^4.0.0",
     "tslib": "^2.6.3",

@@ -25,10 +25,13 @@ func reset(t *testing.T) {
 
 func dummyMockApi(t *testing.T) common.MockApi {
 	var response common.Response
-	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
+	if json.Unmarshal([]byte(`[{"valid_json":true,"body":"this is the response"},{"yes":4}]`), &response.Get) != nil {
 		t.Fatal("error while unmashaling")
 	}
 	if json.Unmarshal([]byte(`{"example_patch_body":"this is a string returned from patch operation"}`), &response.Patch) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"example_put_body":"2"}`), &response.Put) != nil {
 		t.Fatal("error while unmashaling")
 	}
 	if json.Unmarshal([]byte(`{"error":"posted an invalid element"}`), &response.Post) != nil {
@@ -39,7 +42,7 @@ func dummyMockApi(t *testing.T) common.MockApi {
 	}
 	return common.MockApi{
 		Name:      fmt.Sprintf("dummy-mock-api-%d", rand.Intn(1000)),
-		URL:       fmt.Sprintf("url.com-%d", rand.Intn(1000)),
+		URL:       fmt.Sprintf("url-%d/first_segment/second_segment/third.with.points", rand.Intn(1000)),
 		Responses: response,
 	}
 }
@@ -47,10 +50,13 @@ func dummyMockApi(t *testing.T) common.MockApi {
 func dummyMockApiArray(t *testing.T) []*common.MockApi {
 	var mockApis []*common.MockApi
 	var response common.Response
-	if json.Unmarshal([]byte(`{"valid_json":true,"body":"this is the response"}`), &response.Get) != nil {
+	if json.Unmarshal([]byte(`[{"valid_json":true,"body":"this is the response"},{"yes":4}]`), &response.Get) != nil {
 		t.Fatal("error while unmashaling")
 	}
 	if json.Unmarshal([]byte(`{"example_patch_body":"this is a string returned from patch operation"}`), &response.Patch) != nil {
+		t.Fatal("error while unmashaling")
+	}
+	if json.Unmarshal([]byte(`{"example_put_body":"2"}`), &response.Put) != nil {
 		t.Fatal("error while unmashaling")
 	}
 	if json.Unmarshal([]byte(`{"error":"posted an invalid element"}`), &response.Post) != nil {
@@ -338,17 +344,19 @@ func TestObserveFolder(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, mockApi.Name, retrievedMockApi.Name)
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
-	assert.Equal(t, mockApi.Responses.Get, retrievedMockApi.Responses.Get)
-	assert.Equal(t, mockApi.Responses.Patch, retrievedMockApi.Responses.Patch)
-	assert.Equal(t, mockApi.Responses.Post, retrievedMockApi.Responses.Post)
-	assert.Equal(t, mockApi.Responses.Delete, retrievedMockApi.Responses.Delete)
+	assert.Equal(t, *mockApi.Responses.Get, *retrievedMockApi.Responses.Get)
+	assert.Equal(t, *mockApi.Responses.Patch, *retrievedMockApi.Responses.Patch)
+	assert.Equal(t, *mockApi.Responses.Put, *retrievedMockApi.Responses.Put)
+	assert.Equal(t, *mockApi.Responses.Post, *retrievedMockApi.Responses.Post)
+	assert.Equal(t, *mockApi.Responses.Delete, *retrievedMockApi.Responses.Delete)
 
 	// modify the file
 	mockApi.URL = "newUrl.com"
-	mockApi.Responses.Get = &map[string]interface{}{}
-	mockApi.Responses.Post = &map[string]interface{}{}
-	mockApi.Responses.Patch = &map[string]interface{}{}
-	mockApi.Responses.Delete = &map[string]interface{}{}
+	mockApi.Responses.Get = &common.ResponseStruct{}
+	mockApi.Responses.Post = &common.ResponseStruct{}
+	mockApi.Responses.Patch = &common.ResponseStruct{}
+	mockApi.Responses.Put = &common.ResponseStruct{}
+	mockApi.Responses.Delete = &common.ResponseStruct{}
 	if json.Unmarshal([]byte(`{"new_delete":"body"}`), &mockApi.Responses.Delete) != nil {
 		t.Fatal("error while unmarshalling")
 	}
@@ -356,6 +364,9 @@ func TestObserveFolder(t *testing.T) {
 		t.Fatal("error while unmarshalling")
 	}
 	if json.Unmarshal([]byte(`{"new_patch":"body"}`), &mockApi.Responses.Patch) != nil {
+		t.Fatal("error while unmarshalling")
+	}
+	if json.Unmarshal([]byte(`{"new_put":"body"}`), &mockApi.Responses.Put) != nil {
 		t.Fatal("error while unmarshalling")
 	}
 	if json.Unmarshal([]byte(`{"new_post":"body"}`), &mockApi.Responses.Post) != nil {
@@ -391,6 +402,7 @@ func TestObserveFolder(t *testing.T) {
 	assert.Equal(t, mockApi.URL, retrievedMockApi.URL)
 	assert.Equal(t, mockApi.Responses.Get, retrievedMockApi.Responses.Get)
 	assert.Equal(t, mockApi.Responses.Patch, retrievedMockApi.Responses.Patch)
+	assert.Equal(t, mockApi.Responses.Put, retrievedMockApi.Responses.Put)
 	assert.Equal(t, mockApi.Responses.Post, retrievedMockApi.Responses.Post)
 	assert.Equal(t, mockApi.Responses.Delete, retrievedMockApi.Responses.Delete)
 

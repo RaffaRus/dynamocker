@@ -10,16 +10,11 @@ FROM golang:1.22-alpine AS build-be
 # create a working directory inside the image
 WORKDIR /app
 
-# copy Go modules and dependencies to image
-COPY be-app/go.mod /app/
-
-# download Go modules and dependencies
-RUN go mod tidy
-
-# copy directory files i.e all files ending with .go
+# copy src
 COPY be-app/ /app
 
-RUN ls -ltu
+# download Go modules and dependencies
+RUN go mod tidy -x -v
 
 # compile application
 RUN go build -o build/dynamocker cmd/main.go
@@ -36,7 +31,7 @@ RUN mv build/dynamocker dynamocker/bin/
 ##
 ## STEP 2 - DEPLOY
 ##
-FROM scratch
+FROM busybox
 
 ENV BE_PORT=8150
 

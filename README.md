@@ -40,7 +40,7 @@ Then use docker-compose to launch the containers:
 ```
 $ docker compose -f ./docker-compose.yml --env-file ./.env up -d
 ```
-You should be able to access the UI to http://localhost:{FE_PORT}.
+You should be able to access the UI to [http://localhost:{FE_PORT}](http://localhost:{FE_PORT}).
 
 In case you want to bring down the containers the use:
 ```
@@ -56,11 +56,29 @@ $ wget https://raffarus.github.io/dynamocker/helm/
 ```
 modify the `values.yaml` file with the env variables you choose. 
 
-Start using the UI at  http://localhost:{FE_PORT}.
+Start using the UI at  [http://localhost:{FE_PORT}](http://localhost:{FE_PORT}).
+
+## <img src="https://github.com/kubernetes/minikube/raw/master/images/logo/logo.png" alt="MarineGEO circle logo" style="height: 20px; width:20px;"/> Minikube deployment
+
+If you are using minikube, you better specify it in the values. If you do so, the service being created will be of type LoadBalancer, otherwise a NodePort will be created. Since minikube does not handles NodePorts, using a LoadBalancer is better, since the `minikube tunnel` comand that you give will automatically pickup the LoadBalancer and it will expose the port.
+
+In case you want to have a local folder mounted inside the backend container, then you have to mount the local folder into the minikube node:
+
+```
+$ minikube mount <local_path>:/home/mock-apis
+```
+
+then you can pass the path inside the minikube node to the be app.
+
+In this case the APIs will be expose to [http://<EXTERNAL_IP>:<EXTERNAL_PORT>](http://<EXTERNAL-IP>:<PORT>), where the ip and the port can be taken from the outuput of:
+
+```
+kubectl get svc
+```
 
 ## Reach the mock APIs
 
-In order to reach the mock apis you created, you can find them at http://localhost:{BE_PORT}/dynamocker/api/serve-mock-api/<your_mock_api_url>:
+In order to reach the mock apis you created, you can find them at [http://localhost:{BE_PORT}/dynamocker/api/serve-mock-api/<your_mock_api_url>](http://localhost:{BE_PORT}/dynamocker/api/serve-mock-api/<your_mock_api_url>):
 
 ```
 curl http://localhost:{BE_PORT}/dynamocker/api/serve-mock-api/<your_mock_api_url>

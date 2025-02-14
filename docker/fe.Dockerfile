@@ -5,7 +5,7 @@
 ##
 
 # specify the image used to build the UI
-FROM node:20-alpine3.18 AS build-ui
+FROM node:22-alpine3.20 AS build-ui
 
 # create a working directory inside the image
 WORKDIR /app
@@ -14,10 +14,10 @@ WORKDIR /app
 COPY fe-app/ /app/
 
 # install required packages
-RUN npm install
+RUN npm install --verbose
 
 # compile application
-RUN npm run build --configuration=production
+RUN npm run build --verbose
 
 # ##
 # ## STEP 2 - DEPLOY

@@ -13,6 +13,9 @@ export interface  IMockApi {
     responses: IResponse
 }
 
+// TODO: allow also objects to used under each element of the IResponse
+// The editor of the ui at the moment returns a warning because an object
+// is expected under each elements of the IResponse
 interface IResponse {
     get?: JSON
     patch?: JSON

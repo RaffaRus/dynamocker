@@ -1,7 +1,12 @@
 replicaCount: 1
 
+installUi: true
+
+minikube:
+  enabled: true
+
 images:
-  repository: raffarus/
+  repository:
   pullPolicy: IfNotPresent
   beImage: dynamocker-be
   beTag : 0.0.1
@@ -12,9 +17,13 @@ nameOverride: ""
 fullnameOverride: ""
 
 feService:
-  port: 8151
-  nodePort: 31518
+  internalPort: 8151
+  externalPort: 31518
 
 beService:
-  port: 8150
-  nodePort: 30518
+  internalPort: 8150
+  externalPort: 30518
+
+mockFolder:
+  enabled: true
+  beMockFolder: /home/mock-apis

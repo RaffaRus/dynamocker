@@ -46,6 +46,7 @@ export class MockApiService {
         return this.httpClient.get<ResourceObject>(url)
     }
 
+    // add content-type header as application/json
     postMockApi(mockApi : IMockApi) : Observable<null> {
         let url = this.MOCK_API_SERVE_URL_BASE + this.MOCK_API
         return this.httpClient.post<null>(url, JSON.stringify(mockApi))
