@@ -14,9 +14,9 @@ spec:
     app: {{ .Chart.Name }}
     tier: be
   ports:
-  - port: {{ default 8151 .Values.beService.internalPort  }}
+  - port: {{ default 8151 .Values.beService.port  }}
     protocol: TCP
-    targetPort: {{ default 8151 .Values.beService.externalPort  }}
+    targetPort: {{ default 8151 .Values.beService.port  }}
 {{ else }}
 apiVersion: v1
 kind: Service
@@ -28,7 +28,7 @@ spec:
   type : NodePort
   ports:
   - name: be-port
-    port: {{ default 8151 .Values.beService.internalPort  }}
-    nodePort : {{ default 31518 .Values.beService.externalPort }}
+    port: {{ default 8151 .Values.beService.port  }}
+    nodePort : {{ default 31518 .Values.beService.nodePort }}
     targetPort: 8151
 {{ end }}

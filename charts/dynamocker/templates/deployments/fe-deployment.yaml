@@ -22,8 +22,5 @@ spec:
         image: {{ print (default "" .Values.repository ) (default "dynamocker-fe" .Values.images.feImage) ":" (default "0.0.1" .Values.images.feTag)  }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.images.pullPolicy }}
         ports:
-        - containerPort: {{ default 8151 .Values.beService.internalPort }}
-        env:
-          - name: BE_URL
-            value: "{{ .Chart.Name}}-be-service:{{ default 8150 .Values.beService.externalPort }}"
+        - containerPort: {{ default 8151 .Values.beService.port }}
 {{- end}}

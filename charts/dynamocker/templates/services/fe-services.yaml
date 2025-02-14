@@ -14,9 +14,9 @@ spec:
     app: {{ .Chart.Name }}
     tier: fe
   ports:
-  - port: {{ default 8151 .Values.feService.internalPort  }}
+  - port: {{ default 8151 .Values.feService.port  }}
     protocol: TCP
-    targetPort: {{ default 8151 .Values.feService.externalPort  }}
+    targetPort: {{ default 8151 .Values.feService.port  }}
 {{ else }}
 apiVersion: v1
 kind: Service
@@ -28,7 +28,7 @@ spec:
   type : NodePort
   ports:
   - name: fe-port
-    port: {{ default 8151 .Values.feService.internalPort  }}
-    nodePort : {{ default 31518 .Values.feService.externalPort }}
+    port: {{ default 8151 .Values.feService.port  }}
+    nodePort : {{ default 31518 .Values.feService.nodePort }}
     targetPort: 8151
 {{ end }}
