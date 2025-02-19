@@ -36,19 +36,12 @@ jobs:
           TAG=$(git describe)
           echo "{tag}=${TAG}" >> $GITHUB_OUTPUT
 
-      - name: Run chart-releaser latest
+      - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           mark_as_latest: true
-
-      - name: Run chart-releaser with tag
-        uses: helm/chart-releaser-action@v1.6.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          tag: ${{ steps.get_tag.outputs.tag }}
 
       - name: Print Environment Variables
         run: printenv
