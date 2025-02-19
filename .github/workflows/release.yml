@@ -33,8 +33,8 @@ jobs:
       - name: Get the latest tag
         id: get_tag
         run: |
-          TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo "::set-output name=tag::${TAG}"
+          TAG=$(git describe)
+          echo "{tag}=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Run chart-releaser latest
         uses: helm/chart-releaser-action@v1.6.0
