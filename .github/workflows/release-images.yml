@@ -2,7 +2,7 @@ name: Release Images
 
 on:
   push:
-    tags:        
+    tags:
       - '*' # This gets triggered when a new tag gets pushed
   workflow_dispatch: # This allows you to trigger the workflow manually
 
@@ -22,11 +22,14 @@ jobs:
 
       - name: Log in
         run: |
-         docker login -u ${{env.DOCKER_USER}} -p ${{env.DOCKER_PASSWORD}}
+          docker login -u ${{env.DOCKER_USER}} -p ${{env.DOCKER_PASSWORD}}
+
+      - name: Get version
+        run: |
+          echo "VERSION=$(git describe --abbrev=0 | sed 's/^v//')" >> $GITHUB_ENV
 
       - name: Build the images
         run: |
-          echo "VERSION=${git describe --abbrev=0 | sed 's/^v//'}" >> $GITHUB_ENV
           docker build -t dynamocker-be:${{env.VERSION}} -f docker/be.Dockerfile --ulimit nofile=65535:65535  .
           docker build -t dynamocker-fe:${{env.VERSION}} -f docker/fe.Dockerfile --ulimit nofile=65535:65535  .
 
