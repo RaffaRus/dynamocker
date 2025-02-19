@@ -1,9 +1,18 @@
-name: Release Charts
+name: Test Release Charts
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch: # This allows you to trigger the workflow manually
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+      version:
+        description: 'Application version'
+        required: true
 
 jobs:
   release:
@@ -21,7 +30,25 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Run chart-releaser
+      - name: Get the latest tag
+        id: get_tag
+        run: |
+          TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "::set-output name=tag::${TAG}"
+
+      - name: Run chart-releaser latest
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          allowUpdates: true
+
+      - name: Run chart-releaser with tag
+        uses: helm/chart-releaser-action@v1.6.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          tag: ${{ steps.get_tag.outputs.tag }}
+
+      - name: Print Environment Variables
+        run: printenv
