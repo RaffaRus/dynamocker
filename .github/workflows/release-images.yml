@@ -11,6 +11,9 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    env:
+      DOCKER_USER: ${{secrets.DOCKER_USER}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,19 +21,15 @@ jobs:
           fetch-depth: 0
 
       - name: Log in
-        env:
-          DOCKER_USER: ${{secrets.DOCKER_USER}}
-          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
         run: |
-         docker login -u $DOCKER_USER -p ${DOCKER_PASSWORD}
+         docker login -u ${{env.DOCKER_USER}} -p ${{env.DOCKER_PASSWORD}}
 
       - name: Build the images
-        env: 
-          VERSION: git describe --abbrev=0 | sed 's/^v//'
         run: |
-          docker build -t dynamocker-be:$VERSION -f docker/be.Dockerfile --ulimit nofile=65535:65535  .
-          docker build -t dynamocker-fe:$VERSION -f docker/fe.Dockerfile --ulimit nofile=65535:65535  .
+          echo "VERSION=${git describe --abbrev=0 | sed 's/^v//'}" >> $GITHUB_ENV
+          docker build -t dynamocker-be:${{env.VERSION}} -f docker/be.Dockerfile --ulimit nofile=65535:65535  .
+          docker build -t dynamocker-fe:${{env.VERSION}} -f docker/fe.Dockerfile --ulimit nofile=65535:65535  .
 
       - name: Push the images
         run: |
-          docker push ${DOCKER_USER}/dynamocker-fe:$VERSION
+          docker push ${{env.DOCKER_USER}}/dynamocker-fe:${{env.VERSION}}
