@@ -41,7 +41,7 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
-          allowUpdates: true
+          mark_as_latest: true
 
       - name: Run chart-releaser with tag
         uses: helm/chart-releaser-action@v1.6.0
