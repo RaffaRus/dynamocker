@@ -1,0 +1,44 @@
+name: Release Images
+
+on:
+  push:
+    tags:        
+      - '*' # This gets triggered when a new tag gets pushed
+  workflow_dispatch: # This allows you to trigger the workflow manually
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+      version:
+        description: 'Application version'
+        required: true
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Log in
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+        run: |
+         docker login -u $DOCKER_USER -p ${DOCKER_PASSWORD}
+
+      - name: Build the images
+        env: 
+          VERSION: git describe --abbrev=0 | sed 's/^v//'
+        run: |
+          docker build -t dynamocker-be:$VERSION -f docker/be.Dockerfile --ulimit nofile=65535:65535  .
+          docker build -t dynamocker-fe:$VERSION -f docker/fe.Dockerfile --ulimit nofile=65535:65535  .
+
+      - name: Push the images
+        run: |
+          docker push ${DOCKER_USER}/dynamocker-fe:$VERSION
