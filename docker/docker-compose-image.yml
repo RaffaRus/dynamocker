@@ -1,6 +1,6 @@
 services:
   dynamocker-be:
-    image: raffarus/dynamocker-be:0.0.1
+    image: raffarus/dynamocker-be:0.0.2
     ports:
       - ${BE_PORT}:8150
     volumes:
@@ -8,7 +8,7 @@ services:
     environment:
       - BE_PORT=${BE_PORT}
   dynamocker-fe:
-    image: raffarus/dynamocker-fe:0.0.1
+    image: raffarus/dynamocker-fe:0.0.2
     ports:
       - ${FE_PORT}:8151
     environment:

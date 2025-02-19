@@ -9,9 +9,9 @@ images:
   repository:
   pullPolicy: IfNotPresent
   beImage: dynamocker-be
-  beTag : 0.0.1
+  beTag : 0.0.2
   feImage: dynamocker-fe
-  feTag : 0.0.1
+  feTag : 0.0.2
 
 nameOverride: ""
 fullnameOverride: ""
