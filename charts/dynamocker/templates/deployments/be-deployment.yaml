@@ -24,6 +24,9 @@ spec:
         volumeMounts:
         - mountPath: /mocks
           name: dynamocker-be-mockapi-folder
+        env:
+          - name: DYNA_MOCK_API_FOLDER
+            value: '/mocks/'
       volumes:
       - name: dynamocker-be-mockapi-folder
         hostPath:

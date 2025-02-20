@@ -30,9 +30,9 @@ var envVarList map[string]string = map[string]string{
 func ReadVars() {
 
 	for env := range envVarList {
-		log.Debugf("looking for the key %s\n", env)
+		log.Debugf("looking for the key %s", env)
 		if val := os.Getenv(env); val != "" {
-			log.Infof("found the %s env variable with value = %s\n", env, val)
+			log.Infof("found the %s env variable with value = %s", env, val)
 			envVarList[env] = val
 		} else {
 			log.Infof("env variable %s not found, using default value = %s", env, envVarList[env])

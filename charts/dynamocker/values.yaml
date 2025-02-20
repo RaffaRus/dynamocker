@@ -26,4 +26,7 @@ beService:
 
 mockFolder:
   enabled: true
-  beMockFolder: /home/mock-apis
+  # in case of minikube, this path must coincide with the 
+  # path on the minikube node:
+  #   $ minikube mount <local_path>:<path_on_minikube_node>
+  beMockFolder: /home/mock-apis 
