@@ -49,14 +49,23 @@ $ docker compose -f docker/docker-compose.yml --env-file docker/.env down
 
 ## <img src="https://helm.sh/img/helm.svg" alt="MarineGEO circle logo" style="height: 20px; width:20px;"/> Helm
 
-Pull the Helm Chart from the GitHub repo:
+You can either pull the Helm Chart from the GitHub repo:
 
 ```
 $ wget https://raffarus.github.io/dynamocker/helm/
 ```
-modify the `values.yaml` file with the env variables you choose. 
+modify the `values.yaml` file with the env variables you choose and then install the chart, or you can add the Helm repo that contains the charts:
 
-Start using the UI at  [http://localhost:{FE_PORT}](http://localhost:{FE_PORT}).
+```
+$ helm repo add dynamocker-charts-repo https://raffarus.github.io/dynamocker
+``` 
+and then install dynamocker from the repo:
+
+```
+helm install dynamocker dynamocker-charts-repo/dynamocker
+```
+
+Once installed, start using the UI at  [http://localhost:{FE_PORT}](http://localhost:{FE_PORT}).
 
 ## <img src="https://github.com/kubernetes/minikube/raw/master/images/logo/logo.png" alt="MarineGEO circle logo" style="height: 20px; width:20px;"/> Minikube deployment
 
