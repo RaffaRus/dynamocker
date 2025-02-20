@@ -6,12 +6,12 @@ minikube:
   enabled: true
 
 images:
-  repository:
+  repository: raffarus/
   pullPolicy: IfNotPresent
   beImage: dynamocker-be
-  beTag : 0.0.2
+  beTag : 0.0.3
   feImage: dynamocker-fe
-  feTag : 0.0.2
+  feTag : 0.0.3
 
 nameOverride: ""
 fullnameOverride: ""

@@ -19,7 +19,7 @@ Create the following `docker-compose.yml` file:
 ``` yml
 services:
   dynamocker-be:
-    image: raffarus/dynamocker-be:0.0.2
+    image: raffarus/dynamocker-be:0.0.3
     ports:
       - ${BE_PORT}:8150
     volumes:
@@ -27,7 +27,7 @@ services:
     environment:
       - BE_PORT=${BE_PORT}
   dynamocker-fe:
-    image: raffarus/dynamocker-fe:0.0.2
+    image: raffarus/dynamocker-fe:0.0.3
     ports:
       - ${FE_PORT}:8151
     environment:
@@ -52,7 +52,7 @@ $ docker compose -f docker/docker-compose.yml --env-file docker/.env down
 You can either pull the Helm Chart from the GitHub repo:
 
 ```
-$ wget https://github.com/RaffaRus/dynamocker/releases/download/dynamocker-0.0.2/dynamocker-0.0.2.tgz
+$ wget https://github.com/RaffaRus/dynamocker/releases/download/dynamocker-0.0.3/dynamocker-0.0.3.tgz
 ```
 modify the `values.yaml` file with the env variables you choose and then install the chart, or you can add the Helm repo that contains the charts:
 
