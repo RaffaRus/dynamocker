@@ -52,7 +52,7 @@ $ docker compose -f docker/docker-compose.yml --env-file docker/.env down
 You can either pull the Helm Chart from the GitHub repo:
 
 ```
-$ wget https://raffarus.github.io/dynamocker/helm/
+$ wget https://github.com/RaffaRus/dynamocker/releases/download/dynamocker-0.0.2/dynamocker-0.0.2.tgz
 ```
 modify the `values.yaml` file with the env variables you choose and then install the chart, or you can add the Helm repo that contains the charts:
 
