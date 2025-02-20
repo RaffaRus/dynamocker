@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   dynamocker:
   - apiVersion: v2
+    appVersion: 0.0.3
+    created: "2025-02-20T00:51:31.970035537Z"
+    description: The DynaMocker chart
+    digest: bd5282ad19759114b757c7017e7c831ea480bfcd1cd4167ace774d1845a1f4b8
+    name: dynamocker
+    type: application
+    urls:
+    - https://github.com/RaffaRus/dynamocker/releases/download/dynamocker-0.0.3/dynamocker-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
     appVersion: 0.0.2
     created: "2025-02-19T22:48:08.069434425Z"
     description: The DynaMocker chart
@@ -21,4 +31,4 @@ entries:
     urls:
     - https://github.com/RaffaRus/dynamocker/releases/download/dynamocker-0.0.1/dynamocker-0.0.1.tgz
     version: 0.0.1
-generated: "2025-02-19T22:48:08.069446017Z"
+generated: "2025-02-20T00:51:31.97005347Z"
