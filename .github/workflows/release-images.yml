@@ -27,11 +27,12 @@ jobs:
       - name: Get version
         run: |
           echo "VERSION=$(git describe --abbrev=0 | sed 's/^v//')" >> $GITHUB_ENV
+          echo ${{env.VERSION}}
 
       - name: Build the images
         run: |
-          docker build -t dynamocker-be:${{env.VERSION}} -f docker/be.Dockerfile --ulimit nofile=65535:65535  .
-          docker build -t dynamocker-fe:${{env.VERSION}} -f docker/fe.Dockerfile --ulimit nofile=65535:65535  .
+          docker build -t ${{env.DOCKER_USER}}/dynamocker-be:${{env.VERSION}} -f docker/be.Dockerfile --ulimit nofile=65535:65535  .
+          docker build -t ${{env.DOCKER_USER}}/dynamocker-fe:${{env.VERSION}} -f docker/fe.Dockerfile --ulimit nofile=65535:65535  .
 
       - name: Push the images
         run: |
