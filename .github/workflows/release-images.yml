@@ -36,3 +36,4 @@ jobs:
       - name: Push the images
         run: |
           docker push ${{env.DOCKER_USER}}/dynamocker-fe:${{env.VERSION}}
+          docker push ${{env.DOCKER_USER}}/dynamocker-be:${{env.VERSION}}
