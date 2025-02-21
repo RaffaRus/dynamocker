@@ -6,7 +6,8 @@ export const initialMockApiJsonString : string = [
     '        "get": {},',
     '        "delete": {},',
     '        "post": {},',
-    '        "patch": {}',
+    '        "patch": {},',
+    '        "put": {}',
     '     }',
     '}'
   ].join('\n')

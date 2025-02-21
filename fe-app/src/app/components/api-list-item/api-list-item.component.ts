@@ -35,11 +35,17 @@ export class ApiListItemComponent implements OnInit{
   
   mockApiResponses(): string[] {
     // create the array first, then remove items if they are not defined in the mock api
-    let responses : string[] = ["GET","POST","PATCH","DELETE"]
-    if (JSON.stringify(this.resObj.data.responses.get) === '{}') {remove(responses, m => {return m === "GET"})}
-    if (JSON.stringify(this.resObj.data.responses.post) === '{}') {remove(responses, m => {return m === "POST"})}
-    if (JSON.stringify(this.resObj.data.responses.patch) === '{}') {remove(responses, m => {return m === "PATCH"})}
-    if (JSON.stringify(this.resObj.data.responses.delete) === '{}') {remove(responses, m => {return m ==="DELETE"})}
+    let responses : string[] = ["GET","POST","PATCH","DELETE","PUT"]
+    if (JSON.stringify(this.resObj.data.responses.get) === '{}' ||
+        this.resObj.data.responses.get === undefined) {remove(responses, m => {return m === "GET"})}
+    if (JSON.stringify(this.resObj.data.responses.post) === '{}' ||
+        this.resObj.data.responses.post === undefined) {remove(responses, m => {return m === "POST"})}
+    if (JSON.stringify(this.resObj.data.responses.patch) === '{}' ||
+        this.resObj.data.responses.patch === undefined) {remove(responses, m => {return m === "PATCH"})}
+    if (JSON.stringify(this.resObj.data.responses.delete) === '{}' ||
+        this.resObj.data.responses.delete === undefined) {remove(responses, m => {return m ==="DELETE"})}
+    if (JSON.stringify(this.resObj.data.responses.put) === '{}' ||
+        this.resObj.data.responses.put === undefined) {remove(responses, m => {return m ==="PUT"})} else {console.log(JSON.stringify(this.resObj.data.responses.put))}
     return responses
   }
 

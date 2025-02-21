@@ -109,16 +109,54 @@ export class EditorComponent implements OnInit {
               type: 'object',
               properties: {
                 get: {
-                  type: 'object'
+                  anyOf: [
+                    {
+                      type: 'array'
+                    }, 
+                    {
+                      type: 'object',
+                    }
+                  ]
                 },
                 post: {
-                  type: 'object'
+                  anyOf: [
+                    {
+                      type: 'array'
+                    }, 
+                    {
+                      type: 'object',
+                    }
+                  ]
                 },
                 delete: {
-                  type: 'object'
+                  anyOf: [
+                    {
+                      type: 'array'
+                    }, 
+                    {
+                      type: 'object',
+                    }
+                  ]
                 },
                 patch: {
-                  type: 'object'
+                  anyOf: [
+                    {
+                      type: 'array'
+                    }, 
+                    {
+                      type: 'object',
+                    }
+                  ]
+                },
+                put: {
+                  anyOf: [
+                    {
+                      type: 'array'
+                    }, 
+                    {
+                      type: 'object',
+                    }
+                  ]
                 },
               },
               minProperties: 1

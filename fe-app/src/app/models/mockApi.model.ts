@@ -21,6 +21,7 @@ interface IResponse {
     patch?: JSON
     delete?: JSON
     post?: JSON
+    put?: JSON
 }
 
 export interface  IModifiedMockApi {
@@ -35,6 +36,7 @@ interface IModifiedResponse {
     patch?: string
     delete?: string
     post?: string
+    put?: string
 }
 
 export class ResourceObject implements IResourceObject {
