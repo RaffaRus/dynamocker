@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: fe
-        image: {{ print (default "" .Values.images.repository ) (default "dynamocker-fe" .Values.images.feImage) ":" (default "0.04" .Values.images.feTag)  }}
+        image: {{ print (default "" .Values.images.repository ) (default "dynamocker-fe" .Values.images.feImage) ":" (default "0.0.5" .Values.images.feTag)  }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.images.pullPolicy }}
         ports:
         - containerPort: {{ default 8151 .Values.beService.port }}

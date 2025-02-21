@@ -9,9 +9,9 @@ images:
   repository: raffarus/
   pullPolicy: IfNotPresent
   beImage: dynamocker-be
-  beTag : 0.04
+  beTag : 0.0.5
   feImage: dynamocker-fe
-  feTag : 0.04
+  feTag : 0.0.5
 
 nameOverride: ""
 fullnameOverride: ""
