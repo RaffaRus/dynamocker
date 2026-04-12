@@ -1,7 +1,9 @@
-<div *ngFor="let item of _resObjList">
+@for (item of _resObjList; track item) {
+  <div>
     <app-api-list-item [resObj]=item></app-api-list-item>
-</div>
+  </div>
+}
 
 <div class="panel" style="text-align: center;">
-    <div class="material-icons add-button" (click)="newItem()">add_circle_outline</div>
+  <div class="material-icons add-button" (click)="newItem()">add_circle_outline</div>
 </div>
