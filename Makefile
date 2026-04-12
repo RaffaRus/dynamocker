@@ -12,16 +12,16 @@ build-docker-image-be:
 build-docker-images: build-docker-image-fe build-docker-image-be
 
 docker-compose-build-up:
-		docker compose -f docker/docker-compose-build.yml --env-file docker/.env up -d
+		docker compose -p dynamocker -f docker/docker-compose-build.yml --env-file docker/.env up -d
 
 docker-compose-build-down:
-		docker compose -f docker/docker-compose-build.yml --env-file docker/.env down
+		docker compose -p dynamocker -f docker/docker-compose-build.yml --env-file docker/.env down
 
 docker-compose-image-up:
-		docker compose -f docker/docker-compose-image.yml --env-file docker/.env up -d
+		docker compose -p dynamocker -f docker/docker-compose-image.yml --env-file docker/.env up -d
 
 docker-compose-image-down:
-		docker compose -f docker/docker-compose-image.yml --env-file docker/.env down
+		docker compose -p dynamocker -f docker/docker-compose-image.yml --env-file docker/.env down
 
 docker-compose-image-push:
 		docker compose -f docker/docker-compose-image.yml --env-file docker/.env push
