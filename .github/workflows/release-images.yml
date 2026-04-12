@@ -26,8 +26,13 @@ jobs:
 
       - name: Get version
         run: |
-          echo "VERSION=$(git describe --abbrev=0 | sed 's/^v//')" >> $GITHUB_ENV
-          echo "images are going to be tagged with version: '${{env.VERSION}}'"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF_NAME#v}
+          else
+            VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "images are going to be tagged with version: '$VERSION'"
 
       - name: Build the images
         run: |
