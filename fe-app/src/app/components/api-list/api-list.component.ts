@@ -8,9 +8,10 @@ import { ResourceObject } from '@models/mockApi.model';
 import { MockApiService } from '@services/mockApiService';
 
 @Component({
-  selector: 'app-api-list',
-  templateUrl: './api-list.component.html',
-  styleUrl: './api-list.component.scss'
+    selector: 'app-api-list',
+    templateUrl: './api-list.component.html',
+    styleUrl: './api-list.component.scss',
+    standalone: false
 })
 
 export class ApiListComponent implements OnInit{ 
