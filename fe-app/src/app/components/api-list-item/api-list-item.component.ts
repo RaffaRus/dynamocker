@@ -4,9 +4,10 @@ import { MockApiService } from '@services/mockApiService';
 import { remove } from "lodash";
 
 @Component({
-  selector: 'app-api-list-item',
-  templateUrl: './api-list-item.component.html',
-  styleUrl: './api-list-item.component.scss'
+    selector: 'app-api-list-item',
+    templateUrl: './api-list-item.component.html',
+    styleUrl: './api-list-item.component.scss',
+    standalone: false
 })
 export class ApiListItemComponent implements OnInit{
   @Output() click = new EventEmitter<string>()
